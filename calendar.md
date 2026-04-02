@@ -5,7 +5,7 @@
 
 An at-a-glance calendar for upcoming performances, teaching appearances, and ensemble activity.
 
-This page is static and easy to update: add or remove entries directly in `calendar.md`.
+This page is intentionally simple and easy to update by editing `calendar.md`.
 
 [Performance page](performance.html)
 
@@ -16,22 +16,22 @@ This page is static and easy to update: add or remove entries directly in `calen
 #### April 2026
 - **Monarch Chamber Players**
 - Houston, Texas
-- Chamber performance details coming soon
+- Public performance information will be posted here as dates are finalized
 
 #### May 2026
 - **Emissary Quartet**
 - Houston, Texas
-- Performance and educational engagement details coming soon
+- Performance and educational activity will be posted here as dates are confirmed
 
 #### Summer 2026
 - **Orchestral and chamber work across Texas**
-- Dates to be announced
+- Dates in progress
 - Contact me for current booking and availability information
 
 ### Recent
 #### Recent chamber and orchestral activity
 - Houston and statewide engagements
-- Additional public dates can be added here as they are confirmed
+- This section can be updated with recent public activity as the season develops
 
 ## Contact
 For booking, calendar questions, or collaboration inquiries, email [allison.asthana@gmail.com](mailto:allison.asthana@gmail.com).
