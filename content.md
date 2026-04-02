@@ -7,9 +7,9 @@ Professional flutist, teacher, and creative with a multifaceted practice in perf
 
 I currently freelance in the Houston area, teach private flute lessons in person and online, and build recital programs that move between Western classical repertoire and music inspired by Indian classical traditions.
 
-[Explore my work](#work)
+[Explore performance](performance.html)
 
-[Get in touch](#contact)
+[Study with me](teaching.html)
 
 ## About
 Music has been a constant in my life from a young age, and flute performance remains the center of my work. My years of performing in professional orchestras, elite wind ensembles, intimate chamber groups, and as a concert soloist have shaped a career that is both rigorous and flexible.
@@ -24,7 +24,7 @@ I am especially drawn to repertoire and pedagogy shaped by cross-cultural listen
 
 I perform as a soloist, chamber musician, and orchestral player, with recital programming that prioritizes audience engagement and a broad range of styles, composers, and traditions.
 
-Current work includes freelance performance in the Houston area, chamber collaborations, and repertoire that highlights both classical training and Indian-influenced artistic interests.
+[Learn more](performance.html)
 
 ### Teaching
 ![Teaching studio portrait](assets/images/teaching.JPG)
@@ -33,10 +33,7 @@ I teach private flute lessons for motivated students of all ages, from enthusias
 
 Lessons focus on sound development, technique, phrasing, articulation, performance confidence, and thoughtful practice habits. Students may study in Houston or online.
 
-### Portrait Photography
-![Portrait image](assets/images/portrait.jpg)
-
-The current site also presents a photography practice centered on natural-light portraiture. If you want the rebuilt landing page to stay closest to the existing homepage, this section preserves that interdisciplinary creative identity.
+[View teaching details](teaching.html)
 
 ## Contact
 If you are interested in private flute lessons, audition coaching, performance collaborations, or other creative projects, I would be glad to hear from you.

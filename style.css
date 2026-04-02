@@ -93,6 +93,11 @@ a {
   outline: none;
 }
 
+.site-nav a.is-active {
+  background: rgba(191, 108, 52, 0.16);
+  color: var(--text);
+}
+
 .site-main {
   width: min(calc(100% - 2rem), var(--content-width));
   margin: 0 auto;
@@ -121,7 +126,9 @@ a {
 .hero-media,
 .standard-layout,
 .contact-layout,
-.work-layout {
+.work-layout,
+.calendar-layout,
+.booking-layout {
   padding: clamp(2rem, 4vw, 4rem);
 }
 
@@ -316,6 +323,104 @@ a {
   color: var(--accent-deep);
 }
 
+.calendar-layout {
+  background:
+    linear-gradient(135deg, rgba(191, 108, 52, 0.08), rgba(255, 255, 255, 0)),
+    var(--surface-strong);
+}
+
+.calendar-group + .calendar-group {
+  margin-top: 2.2rem;
+}
+
+.calendar-group-title {
+  margin: 0 0 1rem;
+  font-family: "Cormorant Garamond", serif;
+  font-size: 2rem;
+  font-weight: 600;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.calendar-card,
+.booking-card {
+  padding: 1.25rem;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.76);
+  border: 1px solid rgba(36, 26, 24, 0.08);
+}
+
+.calendar-card h4 {
+  margin: 0 0 0.85rem;
+  font-size: 1.15rem;
+}
+
+.calendar-card p,
+.calendar-card li {
+  color: var(--muted);
+}
+
+.booking-layout {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.42fr) minmax(0, 0.58fr);
+  gap: 2rem;
+  align-items: start;
+}
+
+.booking-copy {
+  color: var(--muted);
+}
+
+.booking-copy p:first-child {
+  margin-top: 0;
+  font-size: 1.08rem;
+  color: var(--text);
+}
+
+.booking-form {
+  display: grid;
+  gap: 0.95rem;
+}
+
+.booking-form label {
+  display: grid;
+  gap: 0.4rem;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.booking-form input,
+.booking-form select,
+.booking-form textarea {
+  width: 100%;
+  padding: 0.9rem 1rem;
+  border: 1px solid rgba(36, 26, 24, 0.14);
+  border-radius: 16px;
+  background: #fffdf9;
+  font: inherit;
+  color: var(--text);
+}
+
+.booking-form textarea {
+  min-height: 140px;
+  resize: vertical;
+}
+
+.booking-form button {
+  border: 0;
+  cursor: pointer;
+}
+
+.booking-note {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+
 .loading-state,
 .error-state {
   padding: 3rem 0;
@@ -326,7 +431,9 @@ a {
   .hero-layout,
   .standard-layout,
   .contact-layout,
-  .work-grid {
+  .booking-layout,
+  .work-grid,
+  .calendar-grid {
     grid-template-columns: 1fr;
   }
 
@@ -358,7 +465,9 @@ a {
   .hero-media,
   .standard-layout,
   .contact-layout,
-  .work-layout {
+  .work-layout,
+  .calendar-layout,
+  .booking-layout {
     padding: 1.4rem;
   }
 
