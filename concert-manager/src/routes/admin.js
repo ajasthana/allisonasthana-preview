@@ -1,9 +1,9 @@
 const express = require("express");
 const crypto = require("crypto");
-const bcrypt = require("bcrypt");
 const db = require("../db");
 const { requireAuth } = require("../auth");
 const { sendOfferEmail } = require("../mailer");
+const { verifyPassword } = require("../password");
 
 const router = express.Router();
 
@@ -11,7 +11,7 @@ router.get("/login", (req, res) => {
   res.render("login", { error: null });
 });
 
-router.post("/login", async (req, res) => {
+router.post("/login", (req, res) => {
   const { password } = req.body;
   const hash = process.env.ADMIN_PASSWORD_HASH;
 
@@ -21,7 +21,7 @@ router.post("/login", async (req, res) => {
     });
   }
 
-  const ok = password && (await bcrypt.compare(password, hash));
+  const ok = password && verifyPassword(password, hash);
   if (!ok) {
     return res.render("login", { error: "Incorrect password." });
   }

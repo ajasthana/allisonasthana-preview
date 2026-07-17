@@ -4,6 +4,8 @@ A small internal tool for running concert logistics: a musician roster, per-conc
 
 This is a separate Node app from the static `allisonasthana-preview` site one directory up — it has its own server, database, and deployment.
 
+Requires **Node 22.5 or newer** (uses Node's built-in `node:sqlite`). Check your version with `node -v`; on macOS, `brew install node` gets you current. There's no native/C++ build step for any dependency, so `npm install` should always be quick and shouldn't require Xcode command line tools.
+
 ## Setup
 
 ```bash

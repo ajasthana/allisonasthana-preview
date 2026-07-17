@@ -1,4 +1,4 @@
-const bcrypt = require("bcrypt");
+const { hashPassword } = require("./password");
 
 const password = process.argv[2];
 if (!password) {
@@ -6,6 +6,4 @@ if (!password) {
   process.exit(1);
 }
 
-bcrypt.hash(password, 12).then((hash) => {
-  console.log(hash);
-});
+console.log(hashPassword(password));
