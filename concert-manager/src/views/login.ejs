@@ -1,0 +1,16 @@
+<%- include('partials/head', { title: 'Log in — Concert Manager' }) %>
+  <main class="centered">
+    <form method="post" action="/login" class="card login-card">
+      <h1>Concert Manager</h1>
+      <% if (error) { %>
+        <p class="error"><%= error %></p>
+      <% } %>
+      <label>
+        Password
+        <input type="password" name="password" required autofocus>
+      </label>
+      <button type="submit" class="button-primary">Log in</button>
+    </form>
+  </main>
+</body>
+</html>

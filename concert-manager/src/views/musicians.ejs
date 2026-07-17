@@ -1,0 +1,49 @@
+<%- include('partials/head', { title: 'Roster — Concert Manager' }) %>
+<%- include('partials/nav') %>
+  <main class="page">
+    <div class="page-header">
+      <h1>Roster</h1>
+    </div>
+
+    <% if (error) { %>
+      <p class="error"><%= error %></p>
+    <% } %>
+
+    <form method="post" action="/musicians" class="card">
+      <h2>Add musician</h2>
+      <div class="form-grid">
+        <label>Name <input name="name" required></label>
+        <label>Email <input type="email" name="email" required></label>
+        <label>Phone <input name="phone"></label>
+        <label>Instrument <input name="instrument"></label>
+      </div>
+      <label>Notes <textarea name="notes" rows="2"></textarea></label>
+      <button type="submit" class="button-primary">Add to roster</button>
+    </form>
+
+    <table class="table">
+      <thead>
+        <tr><th>Name</th><th>Email</th><th>Instrument</th><th>Phone</th><th></th></tr>
+      </thead>
+      <tbody>
+        <% musicians.forEach(m => { %>
+          <tr>
+            <td><%= m.name %></td>
+            <td><%= m.email %></td>
+            <td><%= m.instrument || '' %></td>
+            <td><%= m.phone || '' %></td>
+            <td>
+              <form method="post" action="/musicians/<%= m.id %>/delete" onsubmit="return confirm('Remove this musician?');">
+                <button type="submit" class="link-button danger">Remove</button>
+              </form>
+            </td>
+          </tr>
+        <% }) %>
+        <% if (!musicians.length) { %>
+          <tr><td colspan="5" class="muted">No musicians yet.</td></tr>
+        <% } %>
+      </tbody>
+    </table>
+  </main>
+</body>
+</html>

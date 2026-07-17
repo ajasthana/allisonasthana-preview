@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= concert.title %> — Concert Manager</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <main class="page public-page">
+    <div class="card">
+      <h1><%= concert.title %></h1>
+      <p class="muted">
+        <%= concert.venue || '' %><%= concert.date ? ' · ' + concert.date : '' %>
+        <% if (concert.call_time) { %> · call <%= concert.call_time %><% } %>
+        <% if (concert.concert_time) { %> · downbeat <%= concert.concert_time %><% } %>
+      </p>
+      <p>Hi <%= musician.name %> — <%= offer.role_part ? 'offered as ' + offer.role_part : 'you have an offer' %><%= offer.fee ? ', fee: ' + offer.fee : '' %>.</p>
+
+      <% if (confirmDecision) { %>
+        <div class="notice">
+          <p>Confirm you want to <strong><%= confirmDecision %></strong> this offer?</p>
+          <form method="post" action="/offers/<%= offer.token %>/respond">
+            <input type="hidden" name="decision" value="<%= confirmDecision %>">
+            <button type="submit" class="button-primary">Yes, <%= confirmDecision %></button>
+          </form>
+          <a href="/offers/<%= offer.token %>">Cancel</a>
+        </div>
+      <% } else if (offer.status === 'pending') { %>
+        <div class="offer-actions">
+          <a class="button-primary" href="/offers/<%= offer.token %>/respond?decision=accept">Accept</a>
+          <a class="button-danger" href="/offers/<%= offer.token %>/respond?decision=decline">Decline</a>
+        </div>
+      <% } else { %>
+        <p class="pill status-<%= offer.status %>">You <%= offer.status %> this offer<%= offer.responded_at ? ' on ' + offer.responded_at : '' %>.</p>
+      <% } %>
+    </div>
+
+    <% if (repertoire.length) { %>
+      <div class="card">
+        <h2>Repertoire</h2>
+        <ul>
+          <% repertoire.forEach(piece => { %>
+            <li><%= piece.composer || '' %> — <strong><%= piece.title %></strong><%= piece.movement ? ' (' + piece.movement + ')' : '' %><%= piece.duration ? ' · ' + piece.duration : '' %></li>
+          <% }) %>
+        </ul>
+      </div>
+    <% } %>
+
+    <% if (rehearsals.length) { %>
+      <div class="card">
+        <h2>Rehearsals</h2>
+        <ul>
+          <% rehearsals.forEach(r => { %>
+            <li><%= r.date || '' %> <%= r.start_time || '' %><%= r.end_time ? '–' + r.end_time : '' %> — <%= r.location || 'TBD' %><%= r.notes ? ' · ' + r.notes : '' %></li>
+          <% }) %>
+        </ul>
+      </div>
+    <% } %>
+  </main>
+</body>
+</html>

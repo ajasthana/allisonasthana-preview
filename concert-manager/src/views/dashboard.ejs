@@ -1,0 +1,46 @@
+<%- include('partials/head', { title: 'Dashboard — Concert Manager' }) %>
+<%- include('partials/nav') %>
+  <main class="page">
+    <div class="page-header">
+      <h1>Concerts</h1>
+    </div>
+
+    <form method="post" action="/concerts" class="card">
+      <h2>New concert</h2>
+      <div class="form-grid">
+        <label>Title <input name="title" required></label>
+        <label>Venue <input name="venue"></label>
+        <label>Date <input type="date" name="date"></label>
+        <label>Call time <input type="time" name="call_time"></label>
+        <label>Concert time <input type="time" name="concert_time"></label>
+        <label>Default fee <input name="fee_default" placeholder="e.g. $150"></label>
+      </div>
+      <label>Notes <textarea name="notes" rows="2"></textarea></label>
+      <button type="submit" class="button-primary">Create concert</button>
+    </form>
+
+    <div class="list">
+      <% concerts.forEach(concert => { %>
+        <a class="card list-row" href="/concerts/<%= concert.id %>">
+          <div>
+            <strong><%= concert.title %></strong>
+            <div class="muted"><%= concert.venue || '' %><%= concert.date ? ' · ' + concert.date : '' %></div>
+          </div>
+          <div class="offer-tally">
+            <span class="pill status-<%= concert.status %>"><%= concert.status.replace('_', ' ') %></span>
+            <% const c = counts[concert.id]; %>
+            <% if (c) { %>
+              <span class="pill pill-accepted"><%= c.accepted || 0 %> accepted</span>
+              <span class="pill pill-pending"><%= c.pending || 0 %> pending</span>
+              <span class="pill pill-declined"><%= c.declined || 0 %> declined</span>
+            <% } %>
+          </div>
+        </a>
+      <% }) %>
+      <% if (!concerts.length) { %>
+        <p class="muted">No concerts yet — create one above.</p>
+      <% } %>
+    </div>
+  </main>
+</body>
+</html>
