@@ -12,9 +12,12 @@
     </p>
     <% if (concert.notes) { %><p><%= concert.notes %></p><% } %>
 
-    <form method="post" action="/concerts/<%= concert.id %>/delete" onsubmit="return confirm('Delete this concert and all its offers?');">
-      <button type="submit" class="link-button danger">Delete concert</button>
-    </form>
+    <div class="row-actions">
+      <a href="/concerts/<%= concert.id %>/edit" class="button-secondary">Edit details</a>
+      <form method="post" action="/concerts/<%= concert.id %>/delete" onsubmit="return confirm('Delete this concert and all its offers?');" class="inline">
+        <button type="submit" class="link-button danger">Delete concert</button>
+      </form>
+    </div>
 
     <section class="card">
       <h2>Repertoire</h2>
@@ -28,8 +31,9 @@
               <td><%= piece.movement || '' %></td>
               <td><%= piece.duration || '' %></td>
               <td><%= piece.instrumentation_notes || '' %></td>
-              <td>
-                <form method="post" action="/concerts/<%= concert.id %>/repertoire/<%= piece.id %>/delete">
+              <td class="row-actions">
+                <a href="/concerts/<%= concert.id %>/repertoire/<%= piece.id %>/edit">Edit</a>
+                <form method="post" action="/concerts/<%= concert.id %>/repertoire/<%= piece.id %>/delete" class="inline">
                   <button type="submit" class="link-button danger">Remove</button>
                 </form>
               </td>
@@ -61,8 +65,9 @@
               <td><%= r.start_time || '' %><%= r.end_time ? '–' + r.end_time : '' %></td>
               <td><%= r.location || '' %></td>
               <td><%= r.notes || '' %></td>
-              <td>
-                <form method="post" action="/concerts/<%= concert.id %>/rehearsals/<%= r.id %>/delete">
+              <td class="row-actions">
+                <a href="/concerts/<%= concert.id %>/rehearsals/<%= r.id %>/edit">Edit</a>
+                <form method="post" action="/concerts/<%= concert.id %>/rehearsals/<%= r.id %>/delete" class="inline">
                   <button type="submit" class="link-button danger">Remove</button>
                 </form>
               </td>

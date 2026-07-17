@@ -74,6 +74,45 @@ router.post("/musicians/:id/delete", requireAuth, (req, res) => {
   res.redirect("/musicians");
 });
 
+router.get("/musicians/:id/edit", requireAuth, (req, res) => {
+  const musician = db.prepare("SELECT * FROM musicians WHERE id = ?").get(req.params.id);
+  if (!musician) return res.status(404).send("Musician not found");
+  res.render("musician-edit", { musician, error: null });
+});
+
+router.post("/musicians/:id/edit", requireAuth, (req, res) => {
+  const musician = db.prepare("SELECT * FROM musicians WHERE id = ?").get(req.params.id);
+  if (!musician) return res.status(404).send("Musician not found");
+
+  const { name, email, phone, instrument, notes } = req.body;
+  if (!name || !email) {
+    return res.render("musician-edit", { musician: { ...musician, ...req.body }, error: "Name and email are required." });
+  }
+
+  db.prepare(
+    "UPDATE musicians SET name = ?, email = ?, phone = ?, instrument = ?, notes = ? WHERE id = ?"
+  ).run(name, email, phone || null, instrument || null, notes || null, req.params.id);
+  res.redirect("/musicians");
+});
+
+// --- Ensemble profile ----------------------------------------------------
+
+router.get("/ensemble-profile", requireAuth, (req, res) => {
+  const profile = db.prepare("SELECT * FROM ensemble_profile WHERE id = 1").get();
+  res.render("ensemble-profile", { profile, saved: false });
+});
+
+router.post("/ensemble-profile", requireAuth, (req, res) => {
+  const { name, email, website } = req.body;
+  db.prepare("UPDATE ensemble_profile SET name = ?, email = ?, website = ? WHERE id = 1").run(
+    name || "",
+    email || "",
+    website || ""
+  );
+  const profile = db.prepare("SELECT * FROM ensemble_profile WHERE id = 1").get();
+  res.render("ensemble-profile", { profile, saved: true });
+});
+
 // --- Concerts ----------------------------------------------------------
 
 router.post("/concerts", requireAuth, (req, res) => {
@@ -114,6 +153,28 @@ router.post("/concerts/:id/delete", requireAuth, (req, res) => {
   res.redirect("/");
 });
 
+router.get("/concerts/:id/edit", requireAuth, (req, res) => {
+  const concert = db.prepare("SELECT * FROM concerts WHERE id = ?").get(req.params.id);
+  if (!concert) return res.status(404).send("Concert not found");
+  res.render("concert-edit", { concert, error: null });
+});
+
+router.post("/concerts/:id/edit", requireAuth, (req, res) => {
+  const concert = db.prepare("SELECT * FROM concerts WHERE id = ?").get(req.params.id);
+  if (!concert) return res.status(404).send("Concert not found");
+
+  const { title, venue, date, call_time, concert_time, fee_default, notes } = req.body;
+  if (!title) {
+    return res.render("concert-edit", { concert: { ...concert, ...req.body }, error: "Title is required." });
+  }
+
+  db.prepare(
+    `UPDATE concerts SET title = ?, venue = ?, date = ?, call_time = ?, concert_time = ?, fee_default = ?, notes = ?
+     WHERE id = ?`
+  ).run(title, venue || null, date || null, call_time || null, concert_time || null, fee_default || null, notes || null, req.params.id);
+  res.redirect(`/concerts/${req.params.id}`);
+});
+
 // --- Repertoire ----------------------------------------------------------
 
 router.post("/concerts/:id/repertoire", requireAuth, (req, res) => {
@@ -125,6 +186,34 @@ router.post("/concerts/:id/repertoire", requireAuth, (req, res) => {
     `INSERT INTO repertoire (concert_id, sort_order, composer, title, movement, duration, instrumentation_notes)
      VALUES (?, ?, ?, ?, ?, ?, ?)`
   ).run(req.params.id, nextOrder, composer || null, title, movement || null, duration || null, instrumentation_notes || null);
+  res.redirect(`/concerts/${req.params.id}`);
+});
+
+router.get("/concerts/:id/repertoire/:pieceId/edit", requireAuth, (req, res) => {
+  const concert = db.prepare("SELECT * FROM concerts WHERE id = ?").get(req.params.id);
+  const piece = db.prepare("SELECT * FROM repertoire WHERE id = ? AND concert_id = ?").get(req.params.pieceId, req.params.id);
+  if (!concert || !piece) return res.status(404).send("Not found");
+  res.render("repertoire-edit", { concert, piece, error: null });
+});
+
+router.post("/concerts/:id/repertoire/:pieceId/edit", requireAuth, (req, res) => {
+  const concert = db.prepare("SELECT * FROM concerts WHERE id = ?").get(req.params.id);
+  const piece = db.prepare("SELECT * FROM repertoire WHERE id = ? AND concert_id = ?").get(req.params.pieceId, req.params.id);
+  if (!concert || !piece) return res.status(404).send("Not found");
+
+  const { composer, title, movement, duration, instrumentation_notes } = req.body;
+  if (!title) {
+    return res.render("repertoire-edit", {
+      concert,
+      piece: { ...piece, ...req.body },
+      error: "Title is required.",
+    });
+  }
+
+  db.prepare(
+    `UPDATE repertoire SET composer = ?, title = ?, movement = ?, duration = ?, instrumentation_notes = ?
+     WHERE id = ? AND concert_id = ?`
+  ).run(composer || null, title, movement || null, duration || null, instrumentation_notes || null, req.params.pieceId, req.params.id);
   res.redirect(`/concerts/${req.params.id}`);
 });
 
@@ -141,6 +230,30 @@ router.post("/concerts/:id/rehearsals", requireAuth, (req, res) => {
     `INSERT INTO rehearsals (concert_id, date, start_time, end_time, location, notes)
      VALUES (?, ?, ?, ?, ?, ?)`
   ).run(req.params.id, date || null, start_time || null, end_time || null, location || null, notes || null);
+  res.redirect(`/concerts/${req.params.id}`);
+});
+
+router.get("/concerts/:id/rehearsals/:rehearsalId/edit", requireAuth, (req, res) => {
+  const concert = db.prepare("SELECT * FROM concerts WHERE id = ?").get(req.params.id);
+  const rehearsal = db
+    .prepare("SELECT * FROM rehearsals WHERE id = ? AND concert_id = ?")
+    .get(req.params.rehearsalId, req.params.id);
+  if (!concert || !rehearsal) return res.status(404).send("Not found");
+  res.render("rehearsal-edit", { concert, rehearsal, error: null });
+});
+
+router.post("/concerts/:id/rehearsals/:rehearsalId/edit", requireAuth, (req, res) => {
+  const concert = db.prepare("SELECT * FROM concerts WHERE id = ?").get(req.params.id);
+  const rehearsal = db
+    .prepare("SELECT * FROM rehearsals WHERE id = ? AND concert_id = ?")
+    .get(req.params.rehearsalId, req.params.id);
+  if (!concert || !rehearsal) return res.status(404).send("Not found");
+
+  const { date, start_time, end_time, location, notes } = req.body;
+  db.prepare(
+    `UPDATE rehearsals SET date = ?, start_time = ?, end_time = ?, location = ?, notes = ?
+     WHERE id = ? AND concert_id = ?`
+  ).run(date || null, start_time || null, end_time || null, location || null, notes || null, req.params.rehearsalId, req.params.id);
   res.redirect(`/concerts/${req.params.id}`);
 });
 
@@ -163,6 +276,7 @@ router.post("/concerts/:id/offers", requireAuth, async (req, res) => {
   const rehearsals = db
     .prepare("SELECT * FROM rehearsals WHERE concert_id = ? ORDER BY date, start_time")
     .all(concert.id);
+  const ensemble = db.prepare("SELECT * FROM ensemble_profile WHERE id = 1").get();
   const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get("host")}`;
 
   const results = [];
@@ -179,7 +293,7 @@ router.post("/concerts/:id/offers", requireAuth, async (req, res) => {
       .run(concert.id, musician.id, role_part || null, fee || concert.fee_default || null, token);
 
     const offer = db.prepare("SELECT * FROM offers WHERE id = ?").get(info.lastInsertRowid);
-    const result = await sendOfferEmail({ musician, concert, repertoire, rehearsals, offer, baseUrl });
+    const result = await sendOfferEmail({ musician, concert, repertoire, rehearsals, offer, ensemble, baseUrl });
     results.push({ musician: musician.name, ...result });
   }
 

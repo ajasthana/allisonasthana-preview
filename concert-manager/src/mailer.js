@@ -16,7 +16,7 @@ function buildTransport() {
 
 const transport = buildTransport();
 
-function offerEmailHtml({ musician, concert, repertoire, rehearsals, offer, acceptUrl, declineUrl }) {
+function offerEmailHtml({ musician, concert, repertoire, rehearsals, offer, ensemble, acceptUrl, declineUrl }) {
   const repertoireRows = repertoire
     .map(
       (piece) =>
@@ -35,10 +35,14 @@ function offerEmailHtml({ musician, concert, repertoire, rehearsals, offer, acce
     )
     .join("");
 
+  const ensembleName = ensemble && ensemble.name ? ensemble.name : "";
+  const ensembleFooterParts = [ensemble && ensemble.email, ensemble && ensemble.website].filter(Boolean);
+
   return `
-    <div style="font-family: Georgia, serif; max-width: 560px; margin: 0 auto; color: #222;">
-      <h2 style="margin-bottom: 4px;">${escapeHtml(concert.title)}</h2>
-      <p style="color: #555; margin-top: 0;">${escapeHtml(concert.venue || "")}${
+    <div style="font-family: Georgia, serif; max-width: 560px; margin: 0 auto; color: #3a2f27; background:#fffaf3; padding: 24px; border-radius: 12px;">
+      ${ensembleName ? `<p style="text-transform:uppercase;letter-spacing:0.06em;font-size:12px;color:#c1621f;margin:0 0 4px;">${escapeHtml(ensembleName)}</p>` : ""}
+      <h2 style="margin: 0 0 4px;">${escapeHtml(concert.title)}</h2>
+      <p style="color: #8a7364; margin-top: 0;">${escapeHtml(concert.venue || "")}${
         concert.date ? ` &middot; ${escapeHtml(concert.date)}` : ""
       }</p>
 
@@ -47,15 +51,22 @@ function offerEmailHtml({ musician, concert, repertoire, rehearsals, offer, acce
         offer.role_part ? ` as <strong>${escapeHtml(offer.role_part)}</strong>` : ""
       }${offer.fee ? `, fee: <strong>${escapeHtml(offer.fee)}</strong>` : ""}.</p>
 
-      ${repertoireRows ? `<h3>Repertoire</h3><ul>${repertoireRows}</ul>` : ""}
-      ${rehearsalRows ? `<h3>Rehearsals</h3><ul>${rehearsalRows}</ul>` : ""}
+      ${repertoireRows ? `<h3 style="color:#c1621f;">Repertoire</h3><ul>${repertoireRows}</ul>` : ""}
+      ${rehearsalRows ? `<h3 style="color:#c1621f;">Rehearsals</h3><ul>${rehearsalRows}</ul>` : ""}
 
       <div style="margin: 28px 0;">
-        <a href="${acceptUrl}" style="background:#2e7d32;color:#fff;padding:12px 20px;border-radius:6px;text-decoration:none;margin-right:12px;">Accept</a>
-        <a href="${declineUrl}" style="background:#b3261e;color:#fff;padding:12px 20px;border-radius:6px;text-decoration:none;">Decline</a>
+        <a href="${acceptUrl}" style="background:#e8792f;color:#fff8f0;padding:12px 20px;border-radius:8px;text-decoration:none;margin-right:12px;">Accept</a>
+        <a href="${declineUrl}" style="background:#f1ded0;color:#8a4a26;padding:12px 20px;border-radius:8px;text-decoration:none;">Decline</a>
       </div>
 
-      <p style="color:#777;font-size:13px;">This link is unique to you — no login required.</p>
+      <p style="color:#a9977f;font-size:13px;">This link is unique to you — no login required.</p>
+      ${
+        ensembleName || ensembleFooterParts.length
+          ? `<p style="color:#a9977f;font-size:12px;border-top:1px solid #f0ddc9;padding-top:12px;margin-top:20px;">${escapeHtml(
+              ensembleName
+            )}${ensembleFooterParts.length ? " · " + ensembleFooterParts.map(escapeHtml).join(" · ") : ""}</p>`
+          : ""
+      }
     </div>
   `;
 }
@@ -67,11 +78,11 @@ function escapeHtml(value) {
   });
 }
 
-async function sendOfferEmail({ musician, concert, repertoire, rehearsals, offer, baseUrl }) {
+async function sendOfferEmail({ musician, concert, repertoire, rehearsals, offer, ensemble, baseUrl }) {
   const acceptUrl = `${baseUrl}/offers/${offer.token}/respond?decision=accept`;
   const declineUrl = `${baseUrl}/offers/${offer.token}/respond?decision=decline`;
-  const html = offerEmailHtml({ musician, concert, repertoire, rehearsals, offer, acceptUrl, declineUrl });
-  const subject = `Concert offer: ${concert.title}`;
+  const html = offerEmailHtml({ musician, concert, repertoire, rehearsals, offer, ensemble, acceptUrl, declineUrl });
+  const subject = ensemble && ensemble.name ? `Concert offer from ${ensemble.name}: ${concert.title}` : `Concert offer: ${concert.title}`;
 
   if (!transport) {
     console.warn(

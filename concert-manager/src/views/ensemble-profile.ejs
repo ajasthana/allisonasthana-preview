@@ -1,0 +1,23 @@
+<%- include('partials/head', { title: 'Ensemble Profile — Concert Manager' }) %>
+<%- include('partials/nav') %>
+  <main class="page">
+    <div class="page-header">
+      <h1>Ensemble Profile</h1>
+    </div>
+    <p class="muted">This appears on every offer email sent to musicians.</p>
+
+    <% if (saved) { %>
+      <div class="notice">Saved.</div>
+    <% } %>
+
+    <form method="post" action="/ensemble-profile" class="card">
+      <div class="form-grid">
+        <label>Ensemble name <input name="name" value="<%= profile.name %>" required></label>
+        <label>Contact email <input type="email" name="email" value="<%= profile.email %>"></label>
+        <label>Website <input name="website" value="<%= profile.website %>"></label>
+      </div>
+      <button type="submit" class="button-primary">Save</button>
+    </form>
+  </main>
+</body>
+</html>

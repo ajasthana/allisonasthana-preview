@@ -69,6 +69,17 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_rehearsals_concert ON rehearsals(concert_id);
   CREATE INDEX IF NOT EXISTS idx_offers_concert ON offers(concert_id);
   CREATE INDEX IF NOT EXISTS idx_offers_token ON offers(token);
+
+  CREATE TABLE IF NOT EXISTS ensemble_profile (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    name TEXT NOT NULL DEFAULT '',
+    email TEXT NOT NULL DEFAULT '',
+    website TEXT NOT NULL DEFAULT ''
+  );
 `);
+
+db.prepare(
+  `INSERT OR IGNORE INTO ensemble_profile (id, name, email, website) VALUES (1, ?, ?, ?)`
+).run("Monarch Chamber Players", "info@monarchchamberplayers.org", "monarchchamberplayers.org");
 
 module.exports = db;

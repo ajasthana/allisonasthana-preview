@@ -32,8 +32,9 @@
             <td><%= m.email %></td>
             <td><%= m.instrument || '' %></td>
             <td><%= m.phone || '' %></td>
-            <td>
-              <form method="post" action="/musicians/<%= m.id %>/delete" onsubmit="return confirm('Remove this musician?');">
+            <td class="row-actions">
+              <a href="/musicians/<%= m.id %>/edit">Edit</a>
+              <form method="post" action="/musicians/<%= m.id %>/delete" onsubmit="return confirm('Remove this musician?');" class="inline">
                 <button type="submit" class="link-button danger">Remove</button>
               </form>
             </td>
