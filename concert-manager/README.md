@@ -33,6 +33,14 @@ npm run dev
 
 Visit `http://localhost:3000`, log in with your password, add musicians to the roster, create a concert, add repertoire and rehearsals, then send offers from the concert page.
 
+## Importing musicians from a spreadsheet
+
+On the Roster page, use "Import from spreadsheet" to bulk-add musicians from a CSV file. Columns can be in any order; the importer recognizes common header variations (`Name`/`Full Name`, `Email`/`E-mail`, `Phone`/`Cell`/`Mobile`, `Instrument`/`Section`, `Notes`/`Comments`). A "Download a template" link on that page gives a starter file with the exact expected headers.
+
+Musicians are matched by email address — re-importing the same file (or an updated one) updates existing entries instead of creating duplicates. Rows missing a name or email are skipped and listed in the import summary.
+
+If your roster is in Excel, Numbers, or Google Sheets, export it as CSV first (File → Save As / Download → CSV) — the importer only reads `.csv` files, kept deliberately simple to avoid adding a spreadsheet-parsing dependency with known security advisories.
+
 ## Data
 
 SQLite database lives at `data/concert-manager.db` (created automatically on first run, gitignored).

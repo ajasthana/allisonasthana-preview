@@ -1,11 +1,25 @@
 const express = require("express");
 const crypto = require("crypto");
+const multer = require("multer");
 const db = require("../db");
 const { requireAuth } = require("../auth");
 const { sendOfferEmail } = require("../mailer");
 const { verifyPassword } = require("../password");
+const { parseRosterFile, templateCsv } = require("../roster-import");
 
 const router = express.Router();
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter(req, file, cb) {
+    if (/\.csv$/i.test(file.originalname)) {
+      cb(null, true);
+    } else {
+      cb(new Error("Please upload a .csv file (export your spreadsheet as CSV first)."));
+    }
+  },
+});
 
 router.get("/login", (req, res) => {
   res.render("login", { error: null });
@@ -54,14 +68,14 @@ router.get("/", requireAuth, (req, res) => {
 
 router.get("/musicians", requireAuth, (req, res) => {
   const musicians = db.prepare("SELECT * FROM musicians ORDER BY name").all();
-  res.render("musicians", { musicians, error: null });
+  res.render("musicians", { musicians, error: null, importResult: null });
 });
 
 router.post("/musicians", requireAuth, (req, res) => {
   const { name, email, phone, instrument, notes } = req.body;
   if (!name || !email) {
     const musicians = db.prepare("SELECT * FROM musicians ORDER BY name").all();
-    return res.render("musicians", { musicians, error: "Name and email are required." });
+    return res.render("musicians", { musicians, error: "Name and email are required.", importResult: null });
   }
   db.prepare(
     "INSERT INTO musicians (name, email, phone, instrument, notes) VALUES (?, ?, ?, ?, ?)"
@@ -72,6 +86,82 @@ router.post("/musicians", requireAuth, (req, res) => {
 router.post("/musicians/:id/delete", requireAuth, (req, res) => {
   db.prepare("DELETE FROM musicians WHERE id = ?").run(req.params.id);
   res.redirect("/musicians");
+});
+
+router.get("/musicians/import/template", requireAuth, (req, res) => {
+  res.setHeader("Content-Type", "text/csv");
+  res.setHeader("Content-Disposition", 'attachment; filename="musician-roster-template.csv"');
+  res.send(templateCsv());
+});
+
+router.post("/musicians/import", requireAuth, (req, res) => {
+  upload.single("file")(req, res, (uploadErr) => {
+    const musicians = db.prepare("SELECT * FROM musicians ORDER BY name").all();
+
+    if (uploadErr) {
+      return res.render("musicians", { musicians, error: uploadErr.message, importResult: null });
+    }
+    if (!req.file) {
+      return res.render("musicians", { musicians, error: "Choose a spreadsheet file to import.", importResult: null });
+    }
+
+    let rows;
+    try {
+      rows = parseRosterFile(req.file.buffer);
+    } catch (parseErr) {
+      return res.render("musicians", {
+        musicians,
+        error: "Could not read that file. Make sure it's a .csv export.",
+        importResult: null,
+      });
+    }
+
+    const anyRecognized = rows.some((row) => row.name || row.email);
+    if (rows.length && !anyRecognized) {
+      return res.render("musicians", {
+        musicians,
+        error: "We couldn't find Name or Email columns in that file. Download the template below for the expected format.",
+        importResult: null,
+      });
+    }
+
+    const insertStmt = db.prepare(
+      "INSERT INTO musicians (name, email, phone, instrument, notes) VALUES (?, ?, ?, ?, ?)"
+    );
+    const updateStmt = db.prepare(
+      "UPDATE musicians SET name = ?, phone = ?, instrument = ?, notes = ? WHERE id = ?"
+    );
+    const findByEmail = db.prepare("SELECT id FROM musicians WHERE lower(email) = lower(?)");
+
+    let added = 0;
+    let updated = 0;
+    const skipped = [];
+
+    rows.forEach((row, index) => {
+      const name = (row.name || "").trim();
+      const email = (row.email || "").trim();
+      if (!name || !email) {
+        skipped.push(`Row ${index + 2}: missing ${!name ? "name" : "email"}`);
+        return;
+      }
+
+      const existing = findByEmail.get(email);
+      if (existing) {
+        updateStmt.run(name, row.phone || null, row.instrument || null, row.notes || null, existing.id);
+        updated += 1;
+      } else {
+        insertStmt.run(name, email, row.phone || null, row.instrument || null, row.notes || null);
+        added += 1;
+      }
+    });
+
+    const refreshedMusicians = db.prepare("SELECT * FROM musicians ORDER BY name").all();
+    res.render("musicians", {
+      musicians: refreshedMusicians,
+      error: null,
+      importResult: { added, updated, skipped, total: rows.length },
+    });
+  });
 });
 
 router.get("/musicians/:id/edit", requireAuth, (req, res) => {
