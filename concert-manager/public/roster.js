@@ -32,14 +32,17 @@
 
   const filterChips = document.querySelectorAll(".filter-chip");
   const searchInput = document.getElementById("roster-search");
+  const instrumentFilter = document.getElementById("instrument-filter");
   let activeType = "all";
 
   function applyFilters() {
     const query = (searchInput ? searchInput.value : "").trim().toLowerCase();
+    const instrument = instrumentFilter ? instrumentFilter.value : "all";
     tbody.querySelectorAll("tr[data-musician_type]").forEach((row) => {
       const matchesType = activeType === "all" || row.dataset.musician_type === activeType;
+      const matchesInstrument = instrument === "all" || row.dataset.instrument === instrument;
       const matchesSearch = !query || (row.dataset.search || "").includes(query);
-      row.style.display = matchesType && matchesSearch ? "" : "none";
+      row.style.display = matchesType && matchesInstrument && matchesSearch ? "" : "none";
     });
   }
 
@@ -55,4 +58,14 @@
   if (searchInput) {
     searchInput.addEventListener("input", applyFilters);
   }
+  if (instrumentFilter) {
+    instrumentFilter.addEventListener("change", applyFilters);
+  }
+
+  tbody.querySelectorAll("tr[data-href]").forEach((row) => {
+    row.addEventListener("click", (event) => {
+      if (event.target.closest("a, button, form")) return;
+      window.location.href = row.dataset.href;
+    });
+  });
 })();

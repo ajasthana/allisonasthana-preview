@@ -5,11 +5,13 @@ const session = require("express-session");
 
 const adminRoutes = require("./routes/admin");
 const offerRoutes = require("./routes/offers");
+const { formatTime12h } = require("./format");
 
 const app = express();
 
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
+app.locals.formatTime12h = formatTime12h;
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "..", "public")));

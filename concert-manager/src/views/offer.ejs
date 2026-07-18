@@ -12,8 +12,8 @@
       <h1><%= concert.title %></h1>
       <p class="muted">
         <%= concert.venue || '' %><%= concert.date ? ' · ' + concert.date : '' %>
-        <% if (concert.call_time) { %> · call <%= concert.call_time %><% } %>
-        <% if (concert.concert_time) { %> · downbeat <%= concert.concert_time %><% } %>
+        <% if (concert.call_time) { %> · call <%= formatTime12h(concert.call_time) %><% } %>
+        <% if (concert.concert_time) { %> · downbeat <%= formatTime12h(concert.concert_time) %><% } %>
       </p>
       <p>Hi <%= musician.first_name %> <%= musician.last_name %> — <%= offer.role_part ? 'offered as ' + offer.role_part : 'you have an offer' %><%= offer.fee ? ', fee: ' + offer.fee : '' %>.</p>
 
@@ -59,7 +59,7 @@
         <h2>Rehearsals</h2>
         <ul>
           <% rehearsals.forEach(r => { %>
-            <li><%= r.date || '' %> <%= r.start_time || '' %><%= r.end_time ? '–' + r.end_time : '' %> — <%= r.location || 'TBD' %><%= r.notes ? ' · ' + r.notes : '' %></li>
+            <li><%= r.date || '' %> <%= formatTime12h(r.start_time) %><%= r.end_time ? '–' + formatTime12h(r.end_time) : '' %> — <%= r.location || 'TBD' %><%= r.notes ? ' · ' + r.notes : '' %></li>
           <% }) %>
         </ul>
       </div>

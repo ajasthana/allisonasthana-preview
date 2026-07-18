@@ -7,22 +7,31 @@
     </div>
     <p class="muted">
       <%= concert.venue || '' %><%= concert.date ? ' · ' + concert.date : '' %>
-      <% if (concert.call_time) { %> · call <%= concert.call_time %><% } %>
-      <% if (concert.concert_time) { %> · downbeat <%= concert.concert_time %><% } %>
+      <% if (concert.call_time) { %> · call <%= formatTime12h(concert.call_time) %><% } %>
+      <% if (concert.concert_time) { %> · downbeat <%= formatTime12h(concert.concert_time) %><% } %>
     </p>
     <% if (concert.notes) { %><p><%= concert.notes %></p><% } %>
     <% if (concert.sheet_music_url) { %><p><a href="<%= concert.sheet_music_url %>" target="_blank" rel="noopener">Sheet music &rarr;</a></p><% } %>
 
-    <% if (notifiedCount) { %>
-      <div class="notice">Notified <%= notifiedCount %> confirmed musician<%= notifiedCount === 1 ? '' : 's' %> of this update.</div>
+    <% if (notifiedCount !== null) { %>
+      <div class="notice">
+        <% if (notifiedCount > 0) { %>
+          Notified <%= notifiedCount %> confirmed musician<%= notifiedCount === 1 ? '' : 's' %> of the latest details.
+        <% } else { %>
+          No confirmed musicians to notify yet.
+        <% } %>
+      </div>
     <% } %>
 
     <div class="row-actions">
-      <a href="/concerts/<%= concert.id %>/edit" class="button-secondary">Edit details</a>
-      <form method="post" action="/concerts/<%= concert.id %>/duplicate" class="inline">
+      <a href="/concerts/<%= concert.slug %>/edit" class="button-secondary">Edit details</a>
+      <form method="post" action="/concerts/<%= concert.slug %>/duplicate" class="inline">
         <button type="submit" class="button-secondary">Duplicate for another date</button>
       </form>
-      <form method="post" action="/concerts/<%= concert.id %>/delete" onsubmit="return confirm('Delete this concert and all its offers?');" class="inline">
+      <form method="post" action="/concerts/<%= concert.slug %>/notify" onsubmit="return confirm('Email everyone who has already accepted this concert with the current details?');" class="inline">
+        <button type="submit" class="button-secondary">Notify musicians of update</button>
+      </form>
+      <form method="post" action="/concerts/<%= concert.slug %>/delete" onsubmit="return confirm('Delete this concert and all its offers?');" class="inline">
         <button type="submit" class="link-button danger">Delete concert</button>
       </form>
     </div>
@@ -40,8 +49,8 @@
               <td><%= piece.duration || '' %></td>
               <td><%= piece.instrumentation_notes || '' %></td>
               <td class="row-actions">
-                <a href="/concerts/<%= concert.id %>/repertoire/<%= piece.id %>/edit">Edit</a>
-                <form method="post" action="/concerts/<%= concert.id %>/repertoire/<%= piece.id %>/delete" class="inline">
+                <a href="/concerts/<%= concert.slug %>/repertoire/<%= piece.id %>/edit">Edit</a>
+                <form method="post" action="/concerts/<%= concert.slug %>/repertoire/<%= piece.id %>/delete" class="inline">
                   <button type="submit" class="link-button danger">Remove</button>
                 </form>
               </td>
@@ -52,7 +61,7 @@
           <% } %>
         </tbody>
       </table>
-      <form method="post" action="/concerts/<%= concert.id %>/repertoire" class="form-grid">
+      <form method="post" action="/concerts/<%= concert.slug %>/repertoire" class="form-grid">
         <label>Composer <input name="composer"></label>
         <label>Title <input name="title" required></label>
         <label>Movement <input name="movement"></label>
@@ -70,12 +79,12 @@
           <% rehearsals.forEach(r => { %>
             <tr>
               <td><%= r.date || '' %></td>
-              <td><%= r.start_time || '' %><%= r.end_time ? '–' + r.end_time : '' %></td>
+              <td><%= formatTime12h(r.start_time) %><%= r.end_time ? '–' + formatTime12h(r.end_time) : '' %></td>
               <td><%= r.location || '' %></td>
               <td><%= r.notes || '' %></td>
               <td class="row-actions">
-                <a href="/concerts/<%= concert.id %>/rehearsals/<%= r.id %>/edit">Edit</a>
-                <form method="post" action="/concerts/<%= concert.id %>/rehearsals/<%= r.id %>/delete" class="inline">
+                <a href="/concerts/<%= concert.slug %>/rehearsals/<%= r.id %>/edit">Edit</a>
+                <form method="post" action="/concerts/<%= concert.slug %>/rehearsals/<%= r.id %>/delete" class="inline">
                   <button type="submit" class="link-button danger">Remove</button>
                 </form>
               </td>
@@ -86,7 +95,7 @@
           <% } %>
         </tbody>
       </table>
-      <form method="post" action="/concerts/<%= concert.id %>/rehearsals" class="form-grid">
+      <form method="post" action="/concerts/<%= concert.slug %>/rehearsals" class="form-grid">
         <label>Date <input type="date" name="date"></label>
         <label>Start <input type="time" name="start_time"></label>
         <label>End <input type="time" name="end_time"></label>
@@ -139,7 +148,7 @@
         </tbody>
       </table>
 
-      <form method="post" action="/concerts/<%= concert.id %>/offers" class="form-grid">
+      <form method="post" action="/concerts/<%= concert.slug %>/offers" class="form-grid">
         <fieldset>
           <legend>Send offers to</legend>
           <% if (musicians.length) { %>

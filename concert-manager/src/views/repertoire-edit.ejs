@@ -10,7 +10,7 @@
       <p class="error"><%= error %></p>
     <% } %>
 
-    <form method="post" action="/concerts/<%= concert.id %>/repertoire/<%= piece.id %>/edit" class="card">
+    <form method="post" action="/concerts/<%= concert.slug %>/repertoire/<%= piece.id %>/edit" class="card">
       <div class="form-grid">
         <label>Composer <input name="composer" value="<%= piece.composer || '' %>"></label>
         <label>Title <input name="title" value="<%= piece.title %>" required></label>
@@ -20,7 +20,7 @@
       </div>
       <div class="form-actions">
         <button type="submit" class="button-primary">Save changes</button>
-        <a href="/concerts/<%= concert.id %>" class="button-secondary">Cancel</a>
+        <a href="/concerts/<%= concert.slug %>" class="button-secondary">Cancel</a>
       </div>
     </form>
   </main>

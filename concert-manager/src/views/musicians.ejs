@@ -1,6 +1,6 @@
 <%- include('partials/head', { title: 'Roster — Concert Manager' }) %>
 <%- include('partials/nav') %>
-  <main class="page">
+  <main class="page page-wide">
     <div class="page-header">
       <h1>Roster</h1>
     </div>
@@ -70,10 +70,16 @@
           <button type="button" class="filter-chip" data-filter="core">Core</button>
           <button type="button" class="filter-chip" data-filter="substitute">Substitute</button>
         </div>
+        <select id="instrument-filter" aria-label="Filter by instrument">
+          <option value="all">All instruments</option>
+          <% instruments.forEach(instrument => { %>
+            <option value="<%= instrument.toLowerCase() %>"><%= instrument %></option>
+          <% }) %>
+        </select>
       </div>
-      <p class="muted roster-hint">Click a column heading to sort.</p>
+      <p class="muted roster-hint">Click a column heading to sort. Click a row to view a musician's details.</p>
 
-      <div class="table-scroll">
+      <div class="table-scroll table-scroll-fixed">
         <table class="table" id="roster-table">
           <thead>
             <tr>
@@ -102,6 +108,8 @@
                 data-notes="<%= notes.toLowerCase() %>"
                 data-confirmed_count="<%= confirmedList.length %>"
                 data-search="<%= [m.first_name, m.last_name, m.email, m.instrument, m.phone, notes].join(' ').toLowerCase() %>"
+                data-href="/musicians/<%= m.id %>/edit"
+                class="clickable-row"
               >
                 <td><%= m.last_name %></td>
                 <td><%= m.first_name %></td>

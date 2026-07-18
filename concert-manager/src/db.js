@@ -1,6 +1,7 @@
 const path = require("path");
 const { DatabaseSync } = require("node:sqlite");
 const { splitFullName } = require("./names");
+const { uniqueConcertSlug } = require("./slug");
 
 const dbPath = process.env.DB_PATH || path.join(__dirname, "..", "data", "concert-manager.db");
 const db = new DatabaseSync(dbPath);
@@ -105,6 +106,19 @@ if (!columnExists("concerts", "sheet_music_url")) {
 if (!columnExists("offers", "custom_message")) {
   db.exec("ALTER TABLE offers ADD COLUMN custom_message TEXT;");
 }
+if (!columnExists("concerts", "slug")) {
+  db.exec("ALTER TABLE concerts ADD COLUMN slug TEXT;");
+}
+
+// Backfill slugs for concerts created before this migration existed.
+const unslugged = db.prepare("SELECT id, title FROM concerts WHERE slug IS NULL OR slug = ''").all();
+if (unslugged.length) {
+  const backfillSlug = db.prepare("UPDATE concerts SET slug = ? WHERE id = ?");
+  for (const row of unslugged) {
+    backfillSlug.run(uniqueConcertSlug(db, row.title, row.id), row.id);
+  }
+}
+db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_concerts_slug ON concerts(slug);");
 
 // Backfill first/last name for musicians created before this migration existed,
 // then drop the old single-field column now that first/last name is authoritative.

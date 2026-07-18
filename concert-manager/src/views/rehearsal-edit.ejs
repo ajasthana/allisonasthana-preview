@@ -6,7 +6,7 @@
     </div>
     <p class="muted">For <%= concert.title %></p>
 
-    <form method="post" action="/concerts/<%= concert.id %>/rehearsals/<%= rehearsal.id %>/edit" class="card">
+    <form method="post" action="/concerts/<%= concert.slug %>/rehearsals/<%= rehearsal.id %>/edit" class="card">
       <div class="form-grid">
         <label>Date <input type="date" name="date" value="<%= rehearsal.date || '' %>"></label>
         <label>Start <input type="time" name="start_time" value="<%= rehearsal.start_time || '' %>"></label>
@@ -16,7 +16,7 @@
       </div>
       <div class="form-actions">
         <button type="submit" class="button-primary">Save changes</button>
-        <a href="/concerts/<%= concert.id %>" class="button-secondary">Cancel</a>
+        <a href="/concerts/<%= concert.slug %>" class="button-secondary">Cancel</a>
       </div>
     </form>
   </main>

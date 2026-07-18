@@ -23,7 +23,7 @@ function buildCalendar(db, monthParam) {
   const todayIso = new Date().toISOString().slice(0, 10);
 
   const monthConcerts = db
-    .prepare("SELECT id, title, date FROM concerts WHERE date IS NOT NULL AND date != '' AND strftime('%Y-%m', date) = ?")
+    .prepare("SELECT id, title, date, slug FROM concerts WHERE date IS NOT NULL AND date != '' AND strftime('%Y-%m', date) = ?")
     .all(monthKey);
   const monthRehearsals = db
     .prepare("SELECT date FROM rehearsals WHERE date IS NOT NULL AND date != '' AND strftime('%Y-%m', date) = ?")

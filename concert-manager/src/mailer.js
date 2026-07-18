@@ -1,5 +1,6 @@
 const nodemailer = require("nodemailer");
 const { fullName } = require("./names");
+const { formatTime12h } = require("./format");
 
 function buildTransport() {
   if (!process.env.SMTP_HOST) {
@@ -48,8 +49,8 @@ function concertDetailsHtml({ concert, repertoire, rehearsals }) {
   const rehearsalRows = rehearsals
     .map(
       (r) =>
-        `<li>${escapeHtml(r.date || "")} ${escapeHtml(r.start_time || "")}${
-          r.end_time ? `–${escapeHtml(r.end_time)}` : ""
+        `<li>${escapeHtml(r.date || "")} ${escapeHtml(formatTime12h(r.start_time))}${
+          r.end_time ? `–${escapeHtml(formatTime12h(r.end_time))}` : ""
         } — ${escapeHtml(r.location || "TBD")}</li>`
     )
     .join("");

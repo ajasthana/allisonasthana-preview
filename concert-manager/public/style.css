@@ -45,6 +45,7 @@ a:hover { color: var(--accent); }
   margin: 0 auto;
   padding: 28px 24px 60px;
 }
+.page-wide { max-width: 1080px; }
 
 .page-header {
   display: flex;
@@ -163,10 +164,14 @@ button.link-button.danger:hover { color: #9c4322; }
 .form-actions { display: flex; align-items: center; gap: 12px; margin-top: 12px; }
 
 .table-scroll { overflow-x: auto; margin: 12px 0; }
+.table-scroll-fixed { max-height: 420px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; }
+.table-scroll-fixed .table th { position: sticky; top: 0; background: var(--card); z-index: 1; }
 .table { width: 100%; min-width: 640px; border-collapse: collapse; margin: 0; }
 .table th { text-align: left; padding: 8px 6px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); border-bottom: 1px solid var(--border); white-space: nowrap; }
 .table td { text-align: left; padding: 10px 6px; border-bottom: 1px solid var(--border); font-size: 14px; }
 .notes-cell { color: var(--muted); max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.clickable-row { cursor: pointer; }
+.clickable-row:hover { background: #fdf2e4; }
 
 .pill {
   display: inline-block;

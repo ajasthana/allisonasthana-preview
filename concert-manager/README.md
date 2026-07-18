@@ -35,7 +35,7 @@ Visit `http://localhost:3000`, log in with your password, add musicians to the r
 
 ## Roster
 
-Musicians have separate first/last name fields and a Core or Substitute type. The roster table's column headings are clickable to sort, and the All/Core/Substitute chips filter the list — both client-side, no page reload. A "Confirmed concerts" column shows which concerts each musician has accepted.
+Musicians have separate first/last name fields and a Core or Substitute type. The roster table's column headings are clickable to sort; the search box, All/Core/Substitute chips, and instrument dropdown filter the list — all client-side, no page reload. Click anywhere on a row to open that musician's details. A "Confirmed concerts" column shows which concerts each musician has accepted, and Notes are visible directly in the table (truncated, full text on hover).
 
 ### Importing from a spreadsheet
 
@@ -49,11 +49,15 @@ If your roster is in Excel, Numbers, or Google Sheets, export it as CSV first (F
 
 Each concert can have a sheet music link, shown on the admin page and in offer/update emails. Every offer email includes a persistent "View concert details" link in addition to Accept/Decline — musicians can bookmark it to check repertoire and rehearsal info anytime.
 
-When you edit a concert's details, repertoire, or rehearsals, musicians who already **accepted** their offer are automatically emailed an update notice with the current info (pending/declined musicians aren't notified). This fires on every save, so batch related edits together where you can to avoid multiple emails in a row.
+Edits to a concert's details, repertoire, or rehearsals are **not** emailed automatically. When you're ready to let already-**accepted** musicians know, click "Notify musicians of update" at the top of the concert page — it sends the current info to everyone who's accepted (pending/declined musicians aren't included), and shows how many were notified. Make all your edits first, then notify once.
 
 Repeating a program on another date? Use "Duplicate for another date" on the concert page — it copies the title, venue, times, fee, sheet music link, and repertoire into a new concert and takes you to its edit page to set the new date. Rehearsals and offers are intentionally not copied, since those usually differ per date.
 
 When sending offers, the optional "Message to musicians" field lets you add a note (e.g. a specific ask or reminder) that's included in that batch's offer emails and shown on the musician's offer page.
+
+Each concert's URL is based on its title (e.g. `/concerts/winter-gala`) rather than a numeric ID, generated once when the concert is created. Renaming a concert later doesn't change its URL, so existing links and bookmarks keep working. Two concerts with the same title get `-2`, `-3`, etc. appended automatically.
+
+Times (call time, downbeat, rehearsal times) are always shown in 12-hour format (e.g. 6:00 PM) wherever they're displayed, including in emails — the underlying time picker fields in edit forms are unaffected.
 
 ## Dashboard
 
