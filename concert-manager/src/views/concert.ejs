@@ -19,6 +19,9 @@
 
     <div class="row-actions">
       <a href="/concerts/<%= concert.id %>/edit" class="button-secondary">Edit details</a>
+      <form method="post" action="/concerts/<%= concert.id %>/duplicate" class="inline">
+        <button type="submit" class="button-secondary">Duplicate for another date</button>
+      </form>
       <form method="post" action="/concerts/<%= concert.id %>/delete" onsubmit="return confirm('Delete this concert and all its offers?');" class="inline">
         <button type="submit" class="link-button danger">Delete concert</button>
       </form>
@@ -156,7 +159,10 @@
         </fieldset>
         <label>Role / part <input name="role_part" placeholder="e.g. 2nd flute"></label>
         <label>Fee <input name="fee" placeholder="<%= concert.fee_default || 'e.g. $150' %>"></label>
-        <button type="submit" class="button-primary">Send offers</button>
+        <label>Message to musicians (optional) <textarea name="custom_message" rows="2" placeholder="e.g. Please let me know your availability for the dress rehearsal ASAP."></textarea></label>
+        <div class="form-actions">
+          <button type="submit" class="button-primary">Send offers</button>
+        </div>
       </form>
     </section>
   </main>

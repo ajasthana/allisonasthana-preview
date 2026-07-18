@@ -251,6 +251,7 @@ button.link-button.danger:hover { color: #9c4322; }
 .offer-actions { display: flex; gap: 12px; margin: 16px 0; }
 
 .notice { background: #fdf0e2; border: 1px solid #f3d9b8; border-radius: 10px; padding: 12px 16px; margin: 12px 0; color: #8a5a1e; }
+.custom-message { background: #fdf0e2; border-left: 3px solid var(--accent); padding: 10px 14px; margin: 12px 0; white-space: pre-line; }
 .error { color: var(--danger); }
 .muted { color: var(--muted); }
 

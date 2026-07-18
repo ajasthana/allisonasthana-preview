@@ -51,6 +51,10 @@ Each concert can have a sheet music link, shown on the admin page and in offer/u
 
 When you edit a concert's details, repertoire, or rehearsals, musicians who already **accepted** their offer are automatically emailed an update notice with the current info (pending/declined musicians aren't notified). This fires on every save, so batch related edits together where you can to avoid multiple emails in a row.
 
+Repeating a program on another date? Use "Duplicate for another date" on the concert page — it copies the title, venue, times, fee, sheet music link, and repertoire into a new concert and takes you to its edit page to set the new date. Rehearsals and offers are intentionally not copied, since those usually differ per date.
+
+When sending offers, the optional "Message to musicians" field lets you add a note (e.g. a specific ask or reminder) that's included in that batch's offer emails and shown on the musician's offer page.
+
 ## Dashboard
 
 Shows total confirmed payroll (sum of fees for accepted offers), a month calendar with concert/rehearsal dates marked (use the arrows to browse other months), and an upcoming-events list combining the next few concerts and rehearsals.

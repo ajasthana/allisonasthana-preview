@@ -102,6 +102,9 @@ if (!columnExists("musicians", "musician_type")) {
 if (!columnExists("concerts", "sheet_music_url")) {
   db.exec("ALTER TABLE concerts ADD COLUMN sheet_music_url TEXT;");
 }
+if (!columnExists("offers", "custom_message")) {
+  db.exec("ALTER TABLE offers ADD COLUMN custom_message TEXT;");
+}
 
 // Backfill first/last name for musicians created before this migration existed,
 // then drop the old single-field column now that first/last name is authoritative.

@@ -17,6 +17,10 @@
       </p>
       <p>Hi <%= musician.first_name %> <%= musician.last_name %> — <%= offer.role_part ? 'offered as ' + offer.role_part : 'you have an offer' %><%= offer.fee ? ', fee: ' + offer.fee : '' %>.</p>
 
+      <% if (offer.custom_message) { %>
+        <p class="custom-message"><%= offer.custom_message %></p>
+      <% } %>
+
       <% if (confirmDecision) { %>
         <div class="notice">
           <p>Confirm you want to <strong><%= confirmDecision %></strong> this offer?</p>

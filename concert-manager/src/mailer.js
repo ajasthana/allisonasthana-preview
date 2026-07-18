@@ -65,6 +65,11 @@ function concertDetailsHtml({ concert, repertoire, rehearsals }) {
   `;
 }
 
+function customMessageHtml(offer) {
+  if (!offer || !offer.custom_message) return "";
+  return `<p style="background:#fdf0e2;border-left:3px solid #e8792f;padding:10px 14px;margin:16px 0;">${escapeHtml(offer.custom_message).replace(/\n/g, "<br>")}</p>`;
+}
+
 function ensembleFooterHtml(ensemble) {
   const ensembleName = ensemble && ensemble.name ? ensemble.name : "";
   const parts = [ensemble && ensemble.email, ensemble && ensemble.website].filter(Boolean);
@@ -93,6 +98,8 @@ async function sendOfferEmail({ musician, concert, repertoire, rehearsals, offer
     <p>You're being offered a spot on this concert${
       offer.role_part ? ` as <strong>${escapeHtml(offer.role_part)}</strong>` : ""
     }${offer.fee ? `, fee: <strong>${escapeHtml(offer.fee)}</strong>` : ""}.</p>
+
+    ${customMessageHtml(offer)}
 
     ${concertDetailsHtml({ concert, repertoire, rehearsals })}
 

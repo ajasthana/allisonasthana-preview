@@ -356,6 +356,30 @@ router.post("/concerts/:id/delete", requireAuth, (req, res) => {
   res.redirect("/");
 });
 
+router.post("/concerts/:id/duplicate", requireAuth, (req, res) => {
+  const concert = db.prepare("SELECT * FROM concerts WHERE id = ?").get(req.params.id);
+  if (!concert) return res.status(404).send("Concert not found");
+
+  const info = db
+    .prepare(
+      `INSERT INTO concerts (title, venue, call_time, concert_time, fee_default, sheet_music_url, notes)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`
+    )
+    .run(concert.title, concert.venue, concert.call_time, concert.concert_time, concert.fee_default, concert.sheet_music_url, concert.notes);
+  const newConcertId = info.lastInsertRowid;
+
+  const repertoire = db.prepare("SELECT * FROM repertoire WHERE concert_id = ? ORDER BY sort_order, id").all(concert.id);
+  const insertPiece = db.prepare(
+    `INSERT INTO repertoire (concert_id, sort_order, composer, title, movement, duration, instrumentation_notes)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`
+  );
+  repertoire.forEach((piece) => {
+    insertPiece.run(newConcertId, piece.sort_order, piece.composer, piece.title, piece.movement, piece.duration, piece.instrumentation_notes);
+  });
+
+  res.redirect(`/concerts/${newConcertId}/edit`);
+});
+
 router.get("/concerts/:id/edit", requireAuth, (req, res) => {
   const concert = db.prepare("SELECT * FROM concerts WHERE id = ?").get(req.params.id);
   if (!concert) return res.status(404).send("Concert not found");
@@ -479,7 +503,7 @@ router.post("/concerts/:id/offers", requireAuth, async (req, res) => {
   if (!concert) return res.status(404).send("Concert not found");
 
   const musicianIds = [].concat(req.body.musician_id || []).filter(Boolean);
-  const { role_part, fee } = req.body;
+  const { role_part, fee, custom_message } = req.body;
   const repertoire = db
     .prepare("SELECT * FROM repertoire WHERE concert_id = ? ORDER BY sort_order, id")
     .all(concert.id);
@@ -497,10 +521,10 @@ router.post("/concerts/:id/offers", requireAuth, async (req, res) => {
     const token = crypto.randomBytes(24).toString("hex");
     const info = db
       .prepare(
-        `INSERT INTO offers (concert_id, musician_id, role_part, fee, token, sent_at)
-         VALUES (?, ?, ?, ?, ?, datetime('now'))`
+        `INSERT INTO offers (concert_id, musician_id, role_part, fee, token, custom_message, sent_at)
+         VALUES (?, ?, ?, ?, ?, ?, datetime('now'))`
       )
-      .run(concert.id, musician.id, role_part || null, fee || concert.fee_default || null, token);
+      .run(concert.id, musician.id, role_part || null, fee || concert.fee_default || null, token, custom_message || null);
 
     const offer = db.prepare("SELECT * FROM offers WHERE id = ?").get(info.lastInsertRowid);
     const result = await sendOfferEmail({ musician, concert, repertoire, rehearsals, offer, ensemble, baseUrl });
