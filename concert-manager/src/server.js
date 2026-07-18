@@ -6,6 +6,7 @@ const session = require("express-session");
 const adminRoutes = require("./routes/admin");
 const offerRoutes = require("./routes/offers");
 const { formatTime12h } = require("./format");
+const { runBackup } = require("./backup");
 
 const app = express();
 
@@ -31,4 +32,9 @@ app.use("/", adminRoutes);
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
   console.log(`Concert Manager listening on http://localhost:${port}`);
+
+  runBackup().catch((err) => console.error("Backup failed:", err));
+  setInterval(() => {
+    runBackup().catch((err) => console.error("Backup failed:", err));
+  }, 24 * 60 * 60 * 1000);
 });

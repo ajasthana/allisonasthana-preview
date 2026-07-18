@@ -67,6 +67,8 @@ Shows total confirmed payroll (sum of fees for accepted offers), a month calenda
 
 SQLite database lives at `data/concert-manager.db` (created automatically on first run, gitignored).
 
+Backups run automatically — a snapshot is taken shortly after the app starts, then every 24 hours, and written to `data/backups/`. The 14 most recent snapshots are kept; older ones are deleted automatically. No cron setup is needed since this runs inside the app process itself. Note that backups live on the same disk as the primary database, so they protect against accidental data loss or corruption (a bad edit, an app bug) but not against losing the whole disk/volume — for that you'd want an off-server copy, which isn't set up here.
+
 ## Deployment
 
 Any host that runs a persistent Node process with a writable disk works (e.g. Render, Railway, Fly.io). Set the same environment variables from `.env` there. This is unrelated to however the static site one directory up is deployed.
