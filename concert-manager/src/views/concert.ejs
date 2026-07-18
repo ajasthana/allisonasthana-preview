@@ -11,6 +11,11 @@
       <% if (concert.concert_time) { %> · downbeat <%= concert.concert_time %><% } %>
     </p>
     <% if (concert.notes) { %><p><%= concert.notes %></p><% } %>
+    <% if (concert.sheet_music_url) { %><p><a href="<%= concert.sheet_music_url %>" target="_blank" rel="noopener">Sheet music &rarr;</a></p><% } %>
+
+    <% if (notifiedCount) { %>
+      <div class="notice">Notified <%= notifiedCount %> confirmed musician<%= notifiedCount === 1 ? '' : 's' %> of this update.</div>
+    <% } %>
 
     <div class="row-actions">
       <a href="/concerts/<%= concert.id %>/edit" class="button-secondary">Edit details</a>
@@ -135,7 +140,7 @@
           <% musicians.forEach(m => { %>
             <label class="checkbox-row">
               <input type="checkbox" name="musician_id" value="<%= m.id %>">
-              <%= m.name %> <span class="muted"><%= m.instrument || '' %></span>
+              <%= m.first_name %> <%= m.last_name %> <span class="muted"><%= m.instrument || '' %><%= m.musician_type === 'substitute' ? ' · sub' : '' %></span>
             </label>
           <% }) %>
           <% if (!musicians.length) { %>

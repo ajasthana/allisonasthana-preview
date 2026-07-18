@@ -28,10 +28,17 @@
     <form method="post" action="/musicians" class="card">
       <h2>Add musician</h2>
       <div class="form-grid">
-        <label>Name <input name="name" required></label>
+        <label>First name <input name="first_name" required></label>
+        <label>Last name <input name="last_name" required></label>
         <label>Email <input type="email" name="email" required></label>
         <label>Phone <input name="phone"></label>
         <label>Instrument <input name="instrument"></label>
+        <label>Type
+          <select name="musician_type">
+            <option value="core">Core</option>
+            <option value="substitute">Substitute</option>
+          </select>
+        </label>
       </div>
       <label>Notes <textarea name="notes" rows="2"></textarea></label>
       <button type="submit" class="button-primary">Add to roster</button>
@@ -40,7 +47,7 @@
     <form method="post" action="/musicians/import" enctype="multipart/form-data" class="card">
       <h2>Import from spreadsheet</h2>
       <p class="muted">
-        Upload a CSV file with columns for Name, Email, Phone, Instrument, and Notes (any order, other columns are ignored).
+        Upload a CSV file with columns for First Name, Last Name (or a single Name column), Email, Phone, Instrument, Type, and Notes (any order, other columns are ignored).
         Musicians are matched by email — importing again updates existing entries instead of duplicating them.
         <a href="/musicians/import/template">Download a template</a>.
       </p>
@@ -53,30 +60,63 @@
       </div>
     </form>
 
-    <table class="table">
-      <thead>
-        <tr><th>Name</th><th>Email</th><th>Instrument</th><th>Phone</th><th></th></tr>
-      </thead>
-      <tbody>
-        <% musicians.forEach(m => { %>
+    <div class="card">
+      <div class="roster-toolbar">
+        <div class="filter-group" role="group" aria-label="Filter by type">
+          <button type="button" class="filter-chip is-active" data-filter="all">All</button>
+          <button type="button" class="filter-chip" data-filter="core">Core</button>
+          <button type="button" class="filter-chip" data-filter="substitute">Substitute</button>
+        </div>
+        <p class="muted roster-hint">Click a column heading to sort.</p>
+      </div>
+
+      <table class="table" id="roster-table">
+        <thead>
           <tr>
-            <td><%= m.name %></td>
-            <td><%= m.email %></td>
-            <td><%= m.instrument || '' %></td>
-            <td><%= m.phone || '' %></td>
-            <td class="row-actions">
-              <a href="/musicians/<%= m.id %>/edit">Edit</a>
-              <form method="post" action="/musicians/<%= m.id %>/delete" onsubmit="return confirm('Remove this musician?');" class="inline">
-                <button type="submit" class="link-button danger">Remove</button>
-              </form>
-            </td>
+            <th data-sort="last_name" data-type="text">Last name</th>
+            <th data-sort="first_name" data-type="text">First name</th>
+            <th data-sort="email" data-type="text">Email</th>
+            <th data-sort="instrument" data-type="text">Instrument</th>
+            <th data-sort="musician_type" data-type="text">Type</th>
+            <th data-sort="phone" data-type="text">Phone</th>
+            <th data-sort="confirmed_count" data-type="number">Confirmed concerts</th>
+            <th></th>
           </tr>
-        <% }) %>
-        <% if (!musicians.length) { %>
-          <tr><td colspan="5" class="muted">No musicians yet.</td></tr>
-        <% } %>
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          <% musicians.forEach(m => { %>
+            <% const confirmedList = confirmed[m.id] || []; %>
+            <tr
+              data-last_name="<%= (m.last_name || '').toLowerCase() %>"
+              data-first_name="<%= (m.first_name || '').toLowerCase() %>"
+              data-email="<%= (m.email || '').toLowerCase() %>"
+              data-instrument="<%= (m.instrument || '').toLowerCase() %>"
+              data-musician_type="<%= m.musician_type %>"
+              data-phone="<%= (m.phone || '').toLowerCase() %>"
+              data-confirmed_count="<%= confirmedList.length %>"
+            >
+              <td><%= m.last_name %></td>
+              <td><%= m.first_name %></td>
+              <td><%= m.email %></td>
+              <td><%= m.instrument || '' %></td>
+              <td><span class="pill <%= m.musician_type === 'substitute' ? 'pill-declined' : 'pill-accepted' %>"><%= m.musician_type === 'substitute' ? 'Substitute' : 'Core' %></span></td>
+              <td><%= m.phone || '' %></td>
+              <td><%= confirmedList.length ? confirmedList.join(', ') : '' %></td>
+              <td class="row-actions">
+                <a href="/musicians/<%= m.id %>/edit">Edit</a>
+                <form method="post" action="/musicians/<%= m.id %>/delete" onsubmit="return confirm('Remove this musician?');" class="inline">
+                  <button type="submit" class="link-button danger">Remove</button>
+                </form>
+              </td>
+            </tr>
+          <% }) %>
+          <% if (!musicians.length) { %>
+            <tr><td colspan="8" class="muted">No musicians yet.</td></tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
   </main>
+  <script src="/roster.js" defer></script>
 </body>
 </html>

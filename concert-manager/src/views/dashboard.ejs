@@ -5,6 +5,69 @@
       <h1>Concerts</h1>
     </div>
 
+    <div class="stat-row">
+      <div class="stat-tile">
+        <p class="stat-label">Confirmed payroll</p>
+        <p class="stat-value"><%= totalPayroll %></p>
+        <p class="muted">Sum of fees for accepted offers, across all concerts.</p>
+      </div>
+    </div>
+
+    <div class="dashboard-grid">
+      <div class="card calendar-card">
+        <div class="calendar-toolbar">
+          <a href="/?month=<%= calendar.prevParam %>" class="link-button">&larr;</a>
+          <h2><%= calendar.monthLabel %></h2>
+          <a href="/?month=<%= calendar.nextParam %>" class="link-button">&rarr;</a>
+        </div>
+        <table class="mini-calendar">
+          <thead>
+            <tr><th>S</th><th>M</th><th>T</th><th>W</th><th>T</th><th>F</th><th>S</th></tr>
+          </thead>
+          <tbody>
+            <% calendar.weeks.forEach(week => { %>
+              <tr>
+                <% week.forEach(cell => { %>
+                  <% if (!cell) { %>
+                    <td></td>
+                  <% } else { %>
+                    <td class="cal-day<%= cell.isToday ? ' cal-today' : '' %><%= cell.concerts.length ? ' cal-has-concert' : '' %>">
+                      <% if (cell.concerts.length === 1) { %>
+                        <a href="/concerts/<%= cell.concerts[0].id %>" title="<%= cell.concerts[0].title %>"><%= cell.day %></a>
+                      <% } else { %>
+                        <span><%= cell.day %></span>
+                      <% } %>
+                      <% if (cell.hasRehearsal) { %><span class="cal-dot cal-dot-rehearsal" title="Rehearsal"></span><% } %>
+                    </td>
+                  <% } %>
+                <% }) %>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+        <p class="muted calendar-legend"><span class="cal-dot cal-dot-rehearsal"></span> rehearsal &nbsp; <span class="cal-day-swatch"></span> concert</p>
+      </div>
+
+      <div class="card">
+        <h2>Upcoming</h2>
+        <% if (upcoming.length) { %>
+          <ul class="upcoming-list">
+            <% upcoming.forEach(item => { %>
+              <li>
+                <a href="/concerts/<%= item.concertId %>">
+                  <span class="pill <%= item.type === 'concert' ? 'pill-accepted' : 'pill-pending' %>"><%= item.type %></span>
+                  <strong><%= item.label %></strong>
+                </a>
+                <div class="muted"><%= item.date %><%= item.sub ? ' · ' + item.sub : '' %></div>
+              </li>
+            <% }) %>
+          </ul>
+        <% } else { %>
+          <p class="muted">Nothing scheduled yet.</p>
+        <% } %>
+      </div>
+    </div>
+
     <form method="post" action="/concerts" class="card">
       <h2>New concert</h2>
       <div class="form-grid">
@@ -14,6 +77,7 @@
         <label>Call time <input type="time" name="call_time"></label>
         <label>Concert time <input type="time" name="concert_time"></label>
         <label>Default fee <input name="fee_default" placeholder="e.g. $150"></label>
+        <label>Sheet music link <input type="url" name="sheet_music_url" placeholder="https://..."></label>
       </div>
       <label>Notes <textarea name="notes" rows="2"></textarea></label>
       <button type="submit" class="button-primary">Create concert</button>
@@ -33,6 +97,9 @@
               <span class="pill pill-accepted"><%= c.accepted || 0 %> accepted</span>
               <span class="pill pill-pending"><%= c.pending || 0 %> pending</span>
               <span class="pill pill-declined"><%= c.declined || 0 %> declined</span>
+            <% } %>
+            <% if (payrollByConcert[concert.id]) { %>
+              <span class="pill"><%= payrollByConcert[concert.id] %></span>
             <% } %>
           </div>
         </a>

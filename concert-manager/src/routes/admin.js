@@ -3,9 +3,12 @@ const crypto = require("crypto");
 const multer = require("multer");
 const db = require("../db");
 const { requireAuth } = require("../auth");
-const { sendOfferEmail } = require("../mailer");
+const { sendOfferEmail, sendConcertUpdateEmail } = require("../mailer");
 const { verifyPassword } = require("../password");
 const { parseRosterFile, templateCsv } = require("../roster-import");
+const { fullName } = require("../names");
+const { parseFee, formatCurrency } = require("../payroll");
+const { buildCalendar } = require("../calendar");
 
 const router = express.Router();
 
@@ -61,25 +64,87 @@ router.get("/", requireAuth, (req, res) => {
     .all()
     .reduce((acc, row) => ({ ...acc, [row.concert_id]: row }), {});
 
-  res.render("dashboard", { concerts, counts });
+  const acceptedFees = db.prepare("SELECT concert_id, fee FROM offers WHERE status = 'accepted'").all();
+  const payrollByConcert = {};
+  let totalPayroll = 0;
+  acceptedFees.forEach((row) => {
+    const amount = parseFee(row.fee);
+    payrollByConcert[row.concert_id] = (payrollByConcert[row.concert_id] || 0) + amount;
+    totalPayroll += amount;
+  });
+  Object.keys(payrollByConcert).forEach((id) => {
+    payrollByConcert[id] = formatCurrency(payrollByConcert[id]);
+  });
+
+  const calendar = buildCalendar(db, req.query.month);
+
+  const todayIso = new Date().toISOString().slice(0, 10);
+  const upcomingConcerts = db
+    .prepare("SELECT id, title, date, venue FROM concerts WHERE date >= ? ORDER BY date LIMIT 5")
+    .all(todayIso);
+  const upcomingRehearsals = db
+    .prepare(
+      `SELECT rehearsals.date, rehearsals.location, concerts.title, concerts.id AS concert_id
+       FROM rehearsals JOIN concerts ON concerts.id = rehearsals.concert_id
+       WHERE rehearsals.date >= ? ORDER BY rehearsals.date LIMIT 5`
+    )
+    .all(todayIso);
+  const upcoming = [
+    ...upcomingConcerts.map((c) => ({ type: "concert", date: c.date, label: c.title, sub: c.venue, concertId: c.id })),
+    ...upcomingRehearsals.map((r) => ({
+      type: "rehearsal",
+      date: r.date,
+      label: r.title,
+      sub: r.location,
+      concertId: r.concert_id,
+    })),
+  ]
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .slice(0, 6);
+
+  res.render("dashboard", {
+    concerts,
+    counts,
+    payrollByConcert,
+    totalPayroll: formatCurrency(totalPayroll),
+    calendar,
+    upcoming,
+  });
 });
 
 // --- Musicians -------------------------------------------------------
 
+function confirmedConcertsByMusician() {
+  const rows = db
+    .prepare(
+      `SELECT offers.musician_id, concerts.title
+       FROM offers JOIN concerts ON concerts.id = offers.concert_id
+       WHERE offers.status = 'accepted'
+       ORDER BY concerts.date IS NULL, concerts.date`
+    )
+    .all();
+  const map = {};
+  rows.forEach((row) => {
+    if (!map[row.musician_id]) map[row.musician_id] = [];
+    map[row.musician_id].push(row.title);
+  });
+  return map;
+}
+
 router.get("/musicians", requireAuth, (req, res) => {
-  const musicians = db.prepare("SELECT * FROM musicians ORDER BY name").all();
-  res.render("musicians", { musicians, error: null, importResult: null });
+  const musicians = db.prepare("SELECT * FROM musicians ORDER BY last_name, first_name").all();
+  res.render("musicians", { musicians, error: null, importResult: null, confirmed: confirmedConcertsByMusician() });
 });
 
 router.post("/musicians", requireAuth, (req, res) => {
-  const { name, email, phone, instrument, notes } = req.body;
-  if (!name || !email) {
-    const musicians = db.prepare("SELECT * FROM musicians ORDER BY name").all();
-    return res.render("musicians", { musicians, error: "Name and email are required.", importResult: null });
+  const { first_name, last_name, email, phone, instrument, notes, musician_type } = req.body;
+  if (!first_name || !last_name || !email) {
+    const musicians = db.prepare("SELECT * FROM musicians ORDER BY last_name, first_name").all();
+    return res.render("musicians", { musicians, error: "First name, last name, and email are required.", importResult: null, confirmed: confirmedConcertsByMusician() });
   }
   db.prepare(
-    "INSERT INTO musicians (name, email, phone, instrument, notes) VALUES (?, ?, ?, ?, ?)"
-  ).run(name, email, phone || null, instrument || null, notes || null);
+    "INSERT INTO musicians (first_name, last_name, email, phone, instrument, notes, musician_type) VALUES (?, ?, ?, ?, ?, ?, ?)"
+  ).run(first_name, last_name, email, phone || null, instrument || null, notes || null, musician_type === "substitute" ? "substitute" : "core");
   res.redirect("/musicians");
 });
 
@@ -96,13 +161,13 @@ router.get("/musicians/import/template", requireAuth, (req, res) => {
 
 router.post("/musicians/import", requireAuth, (req, res) => {
   upload.single("file")(req, res, (uploadErr) => {
-    const musicians = db.prepare("SELECT * FROM musicians ORDER BY name").all();
+    const musicians = db.prepare("SELECT * FROM musicians ORDER BY last_name, first_name").all();
 
     if (uploadErr) {
-      return res.render("musicians", { musicians, error: uploadErr.message, importResult: null });
+      return res.render("musicians", { musicians, error: uploadErr.message, importResult: null, confirmed: confirmedConcertsByMusician() });
     }
     if (!req.file) {
-      return res.render("musicians", { musicians, error: "Choose a spreadsheet file to import.", importResult: null });
+      return res.render("musicians", { musicians, error: "Choose a spreadsheet file to import.", importResult: null, confirmed: confirmedConcertsByMusician() });
     }
 
     let rows;
@@ -113,23 +178,25 @@ router.post("/musicians/import", requireAuth, (req, res) => {
         musicians,
         error: "Could not read that file. Make sure it's a .csv export.",
         importResult: null,
+        confirmed: confirmedConcertsByMusician(),
       });
     }
 
-    const anyRecognized = rows.some((row) => row.name || row.email);
+    const anyRecognized = rows.some((row) => row.first_name || row.last_name || row.email);
     if (rows.length && !anyRecognized) {
       return res.render("musicians", {
         musicians,
         error: "We couldn't find Name or Email columns in that file. Download the template below for the expected format.",
         importResult: null,
+        confirmed: confirmedConcertsByMusician(),
       });
     }
 
     const insertStmt = db.prepare(
-      "INSERT INTO musicians (name, email, phone, instrument, notes) VALUES (?, ?, ?, ?, ?)"
+      "INSERT INTO musicians (first_name, last_name, email, phone, instrument, notes, musician_type) VALUES (?, ?, ?, ?, ?, ?, ?)"
     );
     const updateStmt = db.prepare(
-      "UPDATE musicians SET name = ?, phone = ?, instrument = ?, notes = ? WHERE id = ?"
+      "UPDATE musicians SET first_name = ?, last_name = ?, phone = ?, instrument = ?, notes = ?, musician_type = ? WHERE id = ?"
     );
     const findByEmail = db.prepare("SELECT id FROM musicians WHERE lower(email) = lower(?)");
 
@@ -138,28 +205,32 @@ router.post("/musicians/import", requireAuth, (req, res) => {
     const skipped = [];
 
     rows.forEach((row, index) => {
-      const name = (row.name || "").trim();
+      const firstName = (row.first_name || "").trim();
+      const lastName = (row.last_name || "").trim();
       const email = (row.email || "").trim();
-      if (!name || !email) {
-        skipped.push(`Row ${index + 2}: missing ${!name ? "name" : "email"}`);
+      const musicianType = row.musician_type === "substitute" ? "substitute" : "core";
+
+      if (!firstName || !email) {
+        skipped.push(`Row ${index + 2}: missing ${!firstName ? "name" : "email"}`);
         return;
       }
 
       const existing = findByEmail.get(email);
       if (existing) {
-        updateStmt.run(name, row.phone || null, row.instrument || null, row.notes || null, existing.id);
+        updateStmt.run(firstName, lastName, row.phone || null, row.instrument || null, row.notes || null, musicianType, existing.id);
         updated += 1;
       } else {
-        insertStmt.run(name, email, row.phone || null, row.instrument || null, row.notes || null);
+        insertStmt.run(firstName, lastName, email, row.phone || null, row.instrument || null, row.notes || null, musicianType);
         added += 1;
       }
     });
 
-    const refreshedMusicians = db.prepare("SELECT * FROM musicians ORDER BY name").all();
+    const refreshedMusicians = db.prepare("SELECT * FROM musicians ORDER BY last_name, first_name").all();
     res.render("musicians", {
       musicians: refreshedMusicians,
       error: null,
       importResult: { added, updated, skipped, total: rows.length },
+      confirmed: confirmedConcertsByMusician(),
     });
   });
 });
@@ -174,14 +245,26 @@ router.post("/musicians/:id/edit", requireAuth, (req, res) => {
   const musician = db.prepare("SELECT * FROM musicians WHERE id = ?").get(req.params.id);
   if (!musician) return res.status(404).send("Musician not found");
 
-  const { name, email, phone, instrument, notes } = req.body;
-  if (!name || !email) {
-    return res.render("musician-edit", { musician: { ...musician, ...req.body }, error: "Name and email are required." });
+  const { first_name, last_name, email, phone, instrument, notes, musician_type } = req.body;
+  if (!first_name || !last_name || !email) {
+    return res.render("musician-edit", {
+      musician: { ...musician, ...req.body },
+      error: "First name, last name, and email are required.",
+    });
   }
 
   db.prepare(
-    "UPDATE musicians SET name = ?, email = ?, phone = ?, instrument = ?, notes = ? WHERE id = ?"
-  ).run(name, email, phone || null, instrument || null, notes || null, req.params.id);
+    "UPDATE musicians SET first_name = ?, last_name = ?, email = ?, phone = ?, instrument = ?, notes = ?, musician_type = ? WHERE id = ?"
+  ).run(
+    first_name,
+    last_name,
+    email,
+    phone || null,
+    instrument || null,
+    notes || null,
+    musician_type === "substitute" ? "substitute" : "core",
+    req.params.id
+  );
   res.redirect("/musicians");
 });
 
@@ -205,14 +288,43 @@ router.post("/ensemble-profile", requireAuth, (req, res) => {
 
 // --- Concerts ----------------------------------------------------------
 
+async function notifyConcertUpdate(concertId, req) {
+  const concert = db.prepare("SELECT * FROM concerts WHERE id = ?").get(concertId);
+  if (!concert) return 0;
+
+  const repertoire = db.prepare("SELECT * FROM repertoire WHERE concert_id = ? ORDER BY sort_order, id").all(concertId);
+  const rehearsals = db.prepare("SELECT * FROM rehearsals WHERE concert_id = ? ORDER BY date, start_time").all(concertId);
+  const ensemble = db.prepare("SELECT * FROM ensemble_profile WHERE id = 1").get();
+  const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get("host")}`;
+
+  const acceptedOffers = db
+    .prepare(
+      `SELECT offers.*, musicians.first_name, musicians.last_name, musicians.email AS musician_email
+       FROM offers JOIN musicians ON musicians.id = offers.musician_id
+       WHERE offers.concert_id = ? AND offers.status = 'accepted'`
+    )
+    .all(concertId);
+
+  for (const offer of acceptedOffers) {
+    const musician = { first_name: offer.first_name, last_name: offer.last_name, email: offer.musician_email };
+    await sendConcertUpdateEmail({ musician, concert, repertoire, rehearsals, offer, ensemble, baseUrl });
+  }
+
+  return acceptedOffers.length;
+}
+
+function withNotifyRedirect(concertId, count, res) {
+  res.redirect(`/concerts/${concertId}${count ? `?notified=${count}` : ""}`);
+}
+
 router.post("/concerts", requireAuth, (req, res) => {
-  const { title, venue, date, call_time, concert_time, fee_default, notes } = req.body;
+  const { title, venue, date, call_time, concert_time, fee_default, sheet_music_url, notes } = req.body;
   const info = db
     .prepare(
-      `INSERT INTO concerts (title, venue, date, call_time, concert_time, fee_default, notes)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO concerts (title, venue, date, call_time, concert_time, fee_default, sheet_music_url, notes)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
     )
-    .run(title, venue || null, date || null, call_time || null, concert_time || null, fee_default || null, notes || null);
+    .run(title, venue || null, date || null, call_time || null, concert_time || null, fee_default || null, sheet_music_url || null, notes || null);
   res.redirect(`/concerts/${info.lastInsertRowid}`);
 });
 
@@ -228,14 +340,15 @@ router.get("/concerts/:id", requireAuth, (req, res) => {
     .all(concert.id);
   const offers = db
     .prepare(
-      `SELECT offers.*, musicians.name AS musician_name, musicians.email AS musician_email
+      `SELECT offers.*, (musicians.first_name || ' ' || musicians.last_name) AS musician_name, musicians.email AS musician_email
        FROM offers JOIN musicians ON musicians.id = offers.musician_id
        WHERE offers.concert_id = ? ORDER BY offers.created_at DESC`
     )
     .all(concert.id);
-  const musicians = db.prepare("SELECT * FROM musicians ORDER BY name").all();
+  const musicians = db.prepare("SELECT * FROM musicians ORDER BY last_name, first_name").all();
+  const notifiedCount = req.query.notified ? Number(req.query.notified) : null;
 
-  res.render("concert", { concert, repertoire, rehearsals, offers, musicians, sendResult: null });
+  res.render("concert", { concert, repertoire, rehearsals, offers, musicians, sendResult: null, notifiedCount });
 });
 
 router.post("/concerts/:id/delete", requireAuth, (req, res) => {
@@ -249,25 +362,26 @@ router.get("/concerts/:id/edit", requireAuth, (req, res) => {
   res.render("concert-edit", { concert, error: null });
 });
 
-router.post("/concerts/:id/edit", requireAuth, (req, res) => {
+router.post("/concerts/:id/edit", requireAuth, async (req, res) => {
   const concert = db.prepare("SELECT * FROM concerts WHERE id = ?").get(req.params.id);
   if (!concert) return res.status(404).send("Concert not found");
 
-  const { title, venue, date, call_time, concert_time, fee_default, notes } = req.body;
+  const { title, venue, date, call_time, concert_time, fee_default, sheet_music_url, notes } = req.body;
   if (!title) {
     return res.render("concert-edit", { concert: { ...concert, ...req.body }, error: "Title is required." });
   }
 
   db.prepare(
-    `UPDATE concerts SET title = ?, venue = ?, date = ?, call_time = ?, concert_time = ?, fee_default = ?, notes = ?
+    `UPDATE concerts SET title = ?, venue = ?, date = ?, call_time = ?, concert_time = ?, fee_default = ?, sheet_music_url = ?, notes = ?
      WHERE id = ?`
-  ).run(title, venue || null, date || null, call_time || null, concert_time || null, fee_default || null, notes || null, req.params.id);
-  res.redirect(`/concerts/${req.params.id}`);
+  ).run(title, venue || null, date || null, call_time || null, concert_time || null, fee_default || null, sheet_music_url || null, notes || null, req.params.id);
+  const notified = await notifyConcertUpdate(req.params.id, req);
+  withNotifyRedirect(req.params.id, notified, res);
 });
 
 // --- Repertoire ----------------------------------------------------------
 
-router.post("/concerts/:id/repertoire", requireAuth, (req, res) => {
+router.post("/concerts/:id/repertoire", requireAuth, async (req, res) => {
   const { composer, title, movement, duration, instrumentation_notes } = req.body;
   const nextOrder = db
     .prepare("SELECT COALESCE(MAX(sort_order), 0) + 1 AS n FROM repertoire WHERE concert_id = ?")
@@ -276,7 +390,8 @@ router.post("/concerts/:id/repertoire", requireAuth, (req, res) => {
     `INSERT INTO repertoire (concert_id, sort_order, composer, title, movement, duration, instrumentation_notes)
      VALUES (?, ?, ?, ?, ?, ?, ?)`
   ).run(req.params.id, nextOrder, composer || null, title, movement || null, duration || null, instrumentation_notes || null);
-  res.redirect(`/concerts/${req.params.id}`);
+  const notified = await notifyConcertUpdate(req.params.id, req);
+  withNotifyRedirect(req.params.id, notified, res);
 });
 
 router.get("/concerts/:id/repertoire/:pieceId/edit", requireAuth, (req, res) => {
@@ -286,7 +401,7 @@ router.get("/concerts/:id/repertoire/:pieceId/edit", requireAuth, (req, res) => 
   res.render("repertoire-edit", { concert, piece, error: null });
 });
 
-router.post("/concerts/:id/repertoire/:pieceId/edit", requireAuth, (req, res) => {
+router.post("/concerts/:id/repertoire/:pieceId/edit", requireAuth, async (req, res) => {
   const concert = db.prepare("SELECT * FROM concerts WHERE id = ?").get(req.params.id);
   const piece = db.prepare("SELECT * FROM repertoire WHERE id = ? AND concert_id = ?").get(req.params.pieceId, req.params.id);
   if (!concert || !piece) return res.status(404).send("Not found");
@@ -304,23 +419,26 @@ router.post("/concerts/:id/repertoire/:pieceId/edit", requireAuth, (req, res) =>
     `UPDATE repertoire SET composer = ?, title = ?, movement = ?, duration = ?, instrumentation_notes = ?
      WHERE id = ? AND concert_id = ?`
   ).run(composer || null, title, movement || null, duration || null, instrumentation_notes || null, req.params.pieceId, req.params.id);
-  res.redirect(`/concerts/${req.params.id}`);
+  const notified = await notifyConcertUpdate(req.params.id, req);
+  withNotifyRedirect(req.params.id, notified, res);
 });
 
-router.post("/concerts/:id/repertoire/:pieceId/delete", requireAuth, (req, res) => {
+router.post("/concerts/:id/repertoire/:pieceId/delete", requireAuth, async (req, res) => {
   db.prepare("DELETE FROM repertoire WHERE id = ? AND concert_id = ?").run(req.params.pieceId, req.params.id);
-  res.redirect(`/concerts/${req.params.id}`);
+  const notified = await notifyConcertUpdate(req.params.id, req);
+  withNotifyRedirect(req.params.id, notified, res);
 });
 
 // --- Rehearsals ----------------------------------------------------------
 
-router.post("/concerts/:id/rehearsals", requireAuth, (req, res) => {
+router.post("/concerts/:id/rehearsals", requireAuth, async (req, res) => {
   const { date, start_time, end_time, location, notes } = req.body;
   db.prepare(
     `INSERT INTO rehearsals (concert_id, date, start_time, end_time, location, notes)
      VALUES (?, ?, ?, ?, ?, ?)`
   ).run(req.params.id, date || null, start_time || null, end_time || null, location || null, notes || null);
-  res.redirect(`/concerts/${req.params.id}`);
+  const notified = await notifyConcertUpdate(req.params.id, req);
+  withNotifyRedirect(req.params.id, notified, res);
 });
 
 router.get("/concerts/:id/rehearsals/:rehearsalId/edit", requireAuth, (req, res) => {
@@ -332,7 +450,7 @@ router.get("/concerts/:id/rehearsals/:rehearsalId/edit", requireAuth, (req, res)
   res.render("rehearsal-edit", { concert, rehearsal, error: null });
 });
 
-router.post("/concerts/:id/rehearsals/:rehearsalId/edit", requireAuth, (req, res) => {
+router.post("/concerts/:id/rehearsals/:rehearsalId/edit", requireAuth, async (req, res) => {
   const concert = db.prepare("SELECT * FROM concerts WHERE id = ?").get(req.params.id);
   const rehearsal = db
     .prepare("SELECT * FROM rehearsals WHERE id = ? AND concert_id = ?")
@@ -344,12 +462,14 @@ router.post("/concerts/:id/rehearsals/:rehearsalId/edit", requireAuth, (req, res
     `UPDATE rehearsals SET date = ?, start_time = ?, end_time = ?, location = ?, notes = ?
      WHERE id = ? AND concert_id = ?`
   ).run(date || null, start_time || null, end_time || null, location || null, notes || null, req.params.rehearsalId, req.params.id);
-  res.redirect(`/concerts/${req.params.id}`);
+  const notified = await notifyConcertUpdate(req.params.id, req);
+  withNotifyRedirect(req.params.id, notified, res);
 });
 
-router.post("/concerts/:id/rehearsals/:rehearsalId/delete", requireAuth, (req, res) => {
+router.post("/concerts/:id/rehearsals/:rehearsalId/delete", requireAuth, async (req, res) => {
   db.prepare("DELETE FROM rehearsals WHERE id = ? AND concert_id = ?").run(req.params.rehearsalId, req.params.id);
-  res.redirect(`/concerts/${req.params.id}`);
+  const notified = await notifyConcertUpdate(req.params.id, req);
+  withNotifyRedirect(req.params.id, notified, res);
 });
 
 // --- Offers ----------------------------------------------------------
@@ -384,7 +504,7 @@ router.post("/concerts/:id/offers", requireAuth, async (req, res) => {
 
     const offer = db.prepare("SELECT * FROM offers WHERE id = ?").get(info.lastInsertRowid);
     const result = await sendOfferEmail({ musician, concert, repertoire, rehearsals, offer, ensemble, baseUrl });
-    results.push({ musician: musician.name, ...result });
+    results.push({ musician: fullName(musician), ...result });
   }
 
   if (musicianIds.length) {
@@ -397,15 +517,15 @@ router.post("/concerts/:id/offers", requireAuth, async (req, res) => {
     rehearsals,
     offers: db
       .prepare(
-        `SELECT offers.*, musicians.name AS musician_name, musicians.email AS musician_email
+        `SELECT offers.*, (musicians.first_name || ' ' || musicians.last_name) AS musician_name, musicians.email AS musician_email
          FROM offers JOIN musicians ON musicians.id = offers.musician_id
          WHERE offers.concert_id = ? ORDER BY offers.created_at DESC`
       )
       .all(concert.id),
-    musicians: db.prepare("SELECT * FROM musicians ORDER BY name").all(),
+    musicians: db.prepare("SELECT * FROM musicians ORDER BY last_name, first_name").all(),
   };
 
-  res.render("concert", { ...refreshed, sendResult: results });
+  res.render("concert", { ...refreshed, sendResult: results, notifiedCount: null });
 });
 
 router.post("/offers/:id/delete", requireAuth, (req, res) => {

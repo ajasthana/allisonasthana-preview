@@ -1,5 +1,6 @@
 const path = require("path");
 const { DatabaseSync } = require("node:sqlite");
+const { splitFullName } = require("./names");
 
 const dbPath = process.env.DB_PATH || path.join(__dirname, "..", "data", "concert-manager.db");
 const db = new DatabaseSync(dbPath);
@@ -81,5 +82,41 @@ db.exec(`
 db.prepare(
   `INSERT OR IGNORE INTO ensemble_profile (id, name, email, website) VALUES (1, ?, ?, ?)`
 ).run("Monarch Chamber Players", "info@monarchchamberplayers.org", "monarchchamberplayers.org");
+
+function columnExists(table, column) {
+  return db
+    .prepare(`PRAGMA table_info(${table})`)
+    .all()
+    .some((col) => col.name === column);
+}
+
+if (!columnExists("musicians", "first_name")) {
+  db.exec("ALTER TABLE musicians ADD COLUMN first_name TEXT NOT NULL DEFAULT '';");
+}
+if (!columnExists("musicians", "last_name")) {
+  db.exec("ALTER TABLE musicians ADD COLUMN last_name TEXT NOT NULL DEFAULT '';");
+}
+if (!columnExists("musicians", "musician_type")) {
+  db.exec("ALTER TABLE musicians ADD COLUMN musician_type TEXT NOT NULL DEFAULT 'core';");
+}
+if (!columnExists("concerts", "sheet_music_url")) {
+  db.exec("ALTER TABLE concerts ADD COLUMN sheet_music_url TEXT;");
+}
+
+// Backfill first/last name for musicians created before this migration existed,
+// then drop the old single-field column now that first/last name is authoritative.
+if (columnExists("musicians", "name")) {
+  const legacyNamed = db
+    .prepare("SELECT id, name FROM musicians WHERE first_name = '' AND last_name = '' AND name IS NOT NULL AND name != ''")
+    .all();
+  if (legacyNamed.length) {
+    const backfillName = db.prepare("UPDATE musicians SET first_name = ?, last_name = ? WHERE id = ?");
+    for (const row of legacyNamed) {
+      const { first, last } = splitFullName(row.name);
+      backfillName.run(first, last, row.id);
+    }
+  }
+  db.exec("ALTER TABLE musicians DROP COLUMN name;");
+}
 
 module.exports = db;

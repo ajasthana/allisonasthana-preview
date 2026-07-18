@@ -15,7 +15,7 @@
         <% if (concert.call_time) { %> · call <%= concert.call_time %><% } %>
         <% if (concert.concert_time) { %> · downbeat <%= concert.concert_time %><% } %>
       </p>
-      <p>Hi <%= musician.name %> — <%= offer.role_part ? 'offered as ' + offer.role_part : 'you have an offer' %><%= offer.fee ? ', fee: ' + offer.fee : '' %>.</p>
+      <p>Hi <%= musician.first_name %> <%= musician.last_name %> — <%= offer.role_part ? 'offered as ' + offer.role_part : 'you have an offer' %><%= offer.fee ? ', fee: ' + offer.fee : '' %>.</p>
 
       <% if (confirmDecision) { %>
         <div class="notice">
@@ -44,6 +44,9 @@
             <li><%= piece.composer || '' %> — <strong><%= piece.title %></strong><%= piece.movement ? ' (' + piece.movement + ')' : '' %><%= piece.duration ? ' · ' + piece.duration : '' %></li>
           <% }) %>
         </ul>
+        <% if (concert.sheet_music_url) { %>
+          <p><a href="<%= concert.sheet_music_url %>" target="_blank" rel="noopener">Sheet music &rarr;</a></p>
+        <% } %>
       </div>
     <% } %>
 

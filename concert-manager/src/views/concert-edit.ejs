@@ -17,6 +17,7 @@
         <label>Call time <input type="time" name="call_time" value="<%= concert.call_time || '' %>"></label>
         <label>Concert time <input type="time" name="concert_time" value="<%= concert.concert_time || '' %>"></label>
         <label>Default fee <input name="fee_default" value="<%= concert.fee_default || '' %>"></label>
+        <label>Sheet music link <input type="url" name="sheet_music_url" value="<%= concert.sheet_music_url || '' %>" placeholder="https://..."></label>
       </div>
       <label>Notes <textarea name="notes" rows="2"><%= concert.notes || '' %></textarea></label>
       <div class="form-actions">

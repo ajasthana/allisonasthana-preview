@@ -33,13 +33,27 @@ npm run dev
 
 Visit `http://localhost:3000`, log in with your password, add musicians to the roster, create a concert, add repertoire and rehearsals, then send offers from the concert page.
 
-## Importing musicians from a spreadsheet
+## Roster
 
-On the Roster page, use "Import from spreadsheet" to bulk-add musicians from a CSV file. Columns can be in any order; the importer recognizes common header variations (`Name`/`Full Name`, `Email`/`E-mail`, `Phone`/`Cell`/`Mobile`, `Instrument`/`Section`, `Notes`/`Comments`). A "Download a template" link on that page gives a starter file with the exact expected headers.
+Musicians have separate first/last name fields and a Core or Substitute type. The roster table's column headings are clickable to sort, and the All/Core/Substitute chips filter the list — both client-side, no page reload. A "Confirmed concerts" column shows which concerts each musician has accepted.
+
+### Importing from a spreadsheet
+
+Use "Import from spreadsheet" to bulk-add musicians from a CSV file. Columns can be in any order; the importer recognizes common header variations (`First Name`/`Last Name`, or a single `Name`/`Full Name` column which gets split automatically; `Email`/`E-mail`; `Phone`/`Cell`/`Mobile`; `Instrument`/`Section`; `Type` with `Core`/`Substitute`; `Notes`/`Comments`). A "Download a template" link on that page gives a starter file with the exact expected headers.
 
 Musicians are matched by email address — re-importing the same file (or an updated one) updates existing entries instead of creating duplicates. Rows missing a name or email are skipped and listed in the import summary.
 
 If your roster is in Excel, Numbers, or Google Sheets, export it as CSV first (File → Save As / Download → CSV) — the importer only reads `.csv` files, kept deliberately simple to avoid adding a spreadsheet-parsing dependency with known security advisories.
+
+## Concerts
+
+Each concert can have a sheet music link, shown on the admin page and in offer/update emails. Every offer email includes a persistent "View concert details" link in addition to Accept/Decline — musicians can bookmark it to check repertoire and rehearsal info anytime.
+
+When you edit a concert's details, repertoire, or rehearsals, musicians who already **accepted** their offer are automatically emailed an update notice with the current info (pending/declined musicians aren't notified). This fires on every save, so batch related edits together where you can to avoid multiple emails in a row.
+
+## Dashboard
+
+Shows total confirmed payroll (sum of fees for accepted offers), a month calendar with concert/rehearsal dates marked (use the arrows to browse other months), and an upcoming-events list combining the next few concerts and rehearsals.
 
 ## Data
 
