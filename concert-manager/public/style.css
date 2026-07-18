@@ -163,6 +163,22 @@ button.link-button.danger:hover { color: #9c4322; }
 .row-actions { display: flex; align-items: center; gap: 14px; font-size: 14px; }
 .form-actions { display: flex; align-items: center; gap: 12px; margin-top: 12px; }
 
+.offer-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  align-items: stretch;
+}
+@media (max-width: 640px) {
+  .offer-form-grid { grid-template-columns: 1fr; }
+}
+.offer-musicians { display: flex; flex-direction: column; }
+.offer-details { display: flex; flex-direction: column; gap: 12px; }
+.offer-details-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.offer-message { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.offer-message textarea { flex: 1; resize: none; }
+.offer-form-actions { justify-content: flex-end; }
+
 .table-scroll { overflow-x: auto; margin: 12px 0; }
 .table-scroll-fixed { max-height: 420px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; }
 .table-scroll-fixed .table th { position: sticky; top: 0; background: var(--card); z-index: 1; }
@@ -235,10 +251,10 @@ button.link-button.danger:hover { color: #9c4322; }
 .mini-calendar td { text-align: center; padding: 4px 0; font-size: 13px; position: relative; height: 30px; }
 .cal-day a, .cal-day span { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; text-decoration: none; color: var(--ink); }
 .cal-day.cal-has-concert a { background: var(--accent); color: var(--accent-contrast); font-weight: 600; }
-.cal-day.cal-today:not(.cal-has-concert) span, .cal-day.cal-today:not(.cal-has-concert) a { border: 1px solid var(--accent); }
-.cal-dot { display: inline-block; width: 5px; height: 5px; border-radius: 50%; background: var(--accent-dark); position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%); }
+.cal-day.cal-has-rehearsal span { background: var(--secondary-bg); color: var(--secondary-text); font-weight: 600; }
+.cal-day.cal-today:not(.cal-has-concert):not(.cal-has-rehearsal) span, .cal-day.cal-today:not(.cal-has-concert):not(.cal-has-rehearsal) a { border: 1px solid var(--accent); }
 .calendar-legend { display: flex; align-items: center; gap: 4px; font-size: 12px; margin-top: 8px; }
-.calendar-legend .cal-dot { position: static; display: inline-block; transform: none; }
+.cal-rehearsal-swatch { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--secondary-bg); border: 1px solid var(--secondary-text); }
 .cal-day-swatch { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--accent); margin-left: 8px; }
 
 .upcoming-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }

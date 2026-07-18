@@ -148,28 +148,35 @@
         </tbody>
       </table>
 
-      <form method="post" action="/concerts/<%= concert.slug %>/offers" class="form-grid">
-        <fieldset>
-          <legend>Send offers to</legend>
-          <% if (musicians.length) { %>
-            <input type="search" id="offer-musician-search" class="roster-search" placeholder="Search musicians…">
-          <% } %>
-          <div class="musician-picker" id="musician-picker">
-            <% musicians.forEach(m => { %>
-              <label class="checkbox-row" data-search="<%= [m.first_name, m.last_name, m.instrument].join(' ').toLowerCase() %>">
-                <input type="checkbox" name="musician_id" value="<%= m.id %>">
-                <%= m.first_name %> <%= m.last_name %> <span class="muted"><%= m.instrument || '' %><%= m.musician_type === 'substitute' ? ' · sub' : '' %></span>
-              </label>
-            <% }) %>
+      <form method="post" action="/concerts/<%= concert.slug %>/offers" class="offer-form">
+        <div class="offer-form-grid">
+          <fieldset class="offer-musicians">
+            <legend>Send offers to</legend>
+            <% if (musicians.length) { %>
+              <input type="search" id="offer-musician-search" class="roster-search" placeholder="Search musicians…">
+            <% } %>
+            <div class="musician-picker" id="musician-picker">
+              <% musicians.forEach(m => { %>
+                <label class="checkbox-row" data-search="<%= [m.first_name, m.last_name, m.instrument].join(' ').toLowerCase() %>">
+                  <input type="checkbox" name="musician_id" value="<%= m.id %>">
+                  <%= m.first_name %> <%= m.last_name %> <span class="muted"><%= m.instrument || '' %><%= m.musician_type === 'substitute' ? ' · sub' : '' %></span>
+                </label>
+              <% }) %>
+            </div>
+            <% if (!musicians.length) { %>
+              <p class="muted">Add musicians to your roster first.</p>
+            <% } %>
+          </fieldset>
+
+          <div class="offer-details">
+            <div class="offer-details-row">
+              <label>Role / part <input name="role_part" placeholder="e.g. 2nd flute"></label>
+              <label>Fee <input name="fee" placeholder="<%= concert.fee_default || 'e.g. $150' %>"></label>
+            </div>
+            <label class="offer-message">Message to musicians (optional) <textarea name="custom_message" placeholder="e.g. Please let me know your availability for the dress rehearsal ASAP."></textarea></label>
           </div>
-          <% if (!musicians.length) { %>
-            <p class="muted">Add musicians to your roster first.</p>
-          <% } %>
-        </fieldset>
-        <label>Role / part <input name="role_part" placeholder="e.g. 2nd flute"></label>
-        <label>Fee <input name="fee" placeholder="<%= concert.fee_default || 'e.g. $150' %>"></label>
-        <label>Message to musicians (optional) <textarea name="custom_message" rows="2" placeholder="e.g. Please let me know your availability for the dress rehearsal ASAP."></textarea></label>
-        <div class="form-actions">
+        </div>
+        <div class="form-actions offer-form-actions">
           <button type="submit" class="button-primary">Send offers</button>
         </div>
       </form>

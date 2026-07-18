@@ -31,13 +31,12 @@
                   <% if (!cell) { %>
                     <td></td>
                   <% } else { %>
-                    <td class="cal-day<%= cell.isToday ? ' cal-today' : '' %><%= cell.concerts.length ? ' cal-has-concert' : '' %>">
+                    <td class="cal-day<%= cell.isToday ? ' cal-today' : '' %><%= cell.concerts.length ? ' cal-has-concert' : (cell.hasRehearsal ? ' cal-has-rehearsal' : '') %>">
                       <% if (cell.concerts.length === 1) { %>
                         <a href="/concerts/<%= cell.concerts[0].slug %>" title="<%= cell.concerts[0].title %>"><%= cell.day %></a>
                       <% } else { %>
-                        <span><%= cell.day %></span>
+                        <span title="<%= cell.hasRehearsal ? 'Rehearsal' : '' %>"><%= cell.day %></span>
                       <% } %>
-                      <% if (cell.hasRehearsal) { %><span class="cal-dot cal-dot-rehearsal" title="Rehearsal"></span><% } %>
                     </td>
                   <% } %>
                 <% }) %>
@@ -45,7 +44,7 @@
             <% }) %>
           </tbody>
         </table>
-        <p class="muted calendar-legend"><span class="cal-dot cal-dot-rehearsal"></span> rehearsal &nbsp; <span class="cal-day-swatch"></span> concert</p>
+        <p class="muted calendar-legend"><span class="cal-rehearsal-swatch"></span> rehearsal &nbsp; <span class="cal-day-swatch"></span> concert</p>
       </div>
 
       <div class="card">
