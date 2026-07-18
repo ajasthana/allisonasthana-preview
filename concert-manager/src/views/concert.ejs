@@ -139,12 +139,17 @@
       <form method="post" action="/concerts/<%= concert.id %>/offers" class="form-grid">
         <fieldset>
           <legend>Send offers to</legend>
-          <% musicians.forEach(m => { %>
-            <label class="checkbox-row">
-              <input type="checkbox" name="musician_id" value="<%= m.id %>">
-              <%= m.first_name %> <%= m.last_name %> <span class="muted"><%= m.instrument || '' %><%= m.musician_type === 'substitute' ? ' · sub' : '' %></span>
-            </label>
-          <% }) %>
+          <% if (musicians.length) { %>
+            <input type="search" id="offer-musician-search" class="roster-search" placeholder="Search musicians…">
+          <% } %>
+          <div class="musician-picker" id="musician-picker">
+            <% musicians.forEach(m => { %>
+              <label class="checkbox-row" data-search="<%= [m.first_name, m.last_name, m.instrument].join(' ').toLowerCase() %>">
+                <input type="checkbox" name="musician_id" value="<%= m.id %>">
+                <%= m.first_name %> <%= m.last_name %> <span class="muted"><%= m.instrument || '' %><%= m.musician_type === 'substitute' ? ' · sub' : '' %></span>
+              </label>
+            <% }) %>
+          </div>
           <% if (!musicians.length) { %>
             <p class="muted">Add musicians to your roster first.</p>
           <% } %>
@@ -155,5 +160,18 @@
       </form>
     </section>
   </main>
+  <script>
+    (function () {
+      const search = document.getElementById("offer-musician-search");
+      const picker = document.getElementById("musician-picker");
+      if (!search || !picker) return;
+      search.addEventListener("input", () => {
+        const query = search.value.trim().toLowerCase();
+        picker.querySelectorAll(".checkbox-row").forEach((row) => {
+          row.style.display = !query || row.dataset.search.includes(query) ? "" : "none";
+        });
+      });
+    })();
+  </script>
 </body>
 </html>

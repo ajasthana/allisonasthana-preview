@@ -105,8 +105,17 @@ input:focus, textarea:focus, select:focus {
 
 fieldset { border: 1px solid var(--border); border-radius: 10px; padding: 12px; }
 legend { color: var(--muted); font-size: 14px; padding: 0 4px; }
-.checkbox-row { flex-direction: row; align-items: center; gap: 8px; font-size: 15px; color: var(--ink); }
+.checkbox-row { flex-direction: row; align-items: center; gap: 8px; font-size: 15px; color: var(--ink); padding: 4px 2px; }
 .checkbox-row input { width: auto; }
+.musician-picker {
+  max-height: 220px;
+  overflow-y: auto;
+  margin-top: 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 10px;
+  background: #fffefc;
+}
 
 button, .button-primary, .button-secondary, .button-danger {
   font: inherit;
@@ -153,9 +162,11 @@ button.link-button.danger:hover { color: #9c4322; }
 .row-actions { display: flex; align-items: center; gap: 14px; font-size: 14px; }
 .form-actions { display: flex; align-items: center; gap: 12px; margin-top: 12px; }
 
-.table { width: 100%; border-collapse: collapse; margin: 12px 0; }
-.table th { text-align: left; padding: 8px 6px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); border-bottom: 1px solid var(--border); }
+.table-scroll { overflow-x: auto; margin: 12px 0; }
+.table { width: 100%; min-width: 640px; border-collapse: collapse; margin: 0; }
+.table th { text-align: left; padding: 8px 6px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); border-bottom: 1px solid var(--border); white-space: nowrap; }
 .table td { text-align: left; padding: 10px 6px; border-bottom: 1px solid var(--border); font-size: 14px; }
+.notes-cell { color: var(--muted); max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .pill {
   display: inline-block;
@@ -173,7 +184,8 @@ button.link-button.danger:hover { color: #9c4322; }
 .status-offers_sent { background: #fbe6d0; color: #c1621f; }
 .status-completed { background: #e8d5c4; color: #7a6a5c; }
 
-.roster-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+.roster-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; flex-wrap: wrap; }
+.roster-search { min-width: 200px; flex: 1; max-width: 280px; }
 .filter-group { display: flex; gap: 6px; }
 .filter-chip {
   background: var(--secondary-bg);
@@ -185,7 +197,7 @@ button.link-button.danger:hover { color: #9c4322; }
   cursor: pointer;
 }
 .filter-chip.is-active { background: var(--accent); color: var(--accent-contrast); }
-.roster-hint { font-size: 13px; margin: 0; }
+.roster-hint { font-size: 13px; margin: 0 0 8px; }
 
 .stat-row { display: flex; gap: 16px; margin: 16px 0; flex-wrap: wrap; }
 .stat-tile {

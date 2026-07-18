@@ -31,16 +31,28 @@
   });
 
   const filterChips = document.querySelectorAll(".filter-chip");
+  const searchInput = document.getElementById("roster-search");
+  let activeType = "all";
+
+  function applyFilters() {
+    const query = (searchInput ? searchInput.value : "").trim().toLowerCase();
+    tbody.querySelectorAll("tr[data-musician_type]").forEach((row) => {
+      const matchesType = activeType === "all" || row.dataset.musician_type === activeType;
+      const matchesSearch = !query || (row.dataset.search || "").includes(query);
+      row.style.display = matchesType && matchesSearch ? "" : "none";
+    });
+  }
+
   filterChips.forEach((chip) => {
     chip.addEventListener("click", () => {
       filterChips.forEach((c) => c.classList.remove("is-active"));
       chip.classList.add("is-active");
-
-      const filter = chip.dataset.filter;
-      tbody.querySelectorAll("tr[data-musician_type]").forEach((row) => {
-        const matches = filter === "all" || row.dataset.musician_type === filter;
-        row.style.display = matches ? "" : "none";
-      });
+      activeType = chip.dataset.filter;
+      applyFilters();
     });
   });
+
+  if (searchInput) {
+    searchInput.addEventListener("input", applyFilters);
+  }
 })();
