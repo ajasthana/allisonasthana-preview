@@ -139,14 +139,18 @@ async function deliver({ to, subject, html, fallbackLinks }) {
     return { simulated: true, ...fallbackLinks };
   }
 
-  await transport.sendMail({
-    from: process.env.SMTP_FROM || process.env.SMTP_USER,
-    to,
-    subject,
-    html,
-  });
-
-  return { simulated: false };
+  try {
+    await transport.sendMail({
+      from: process.env.SMTP_FROM || process.env.SMTP_USER,
+      to,
+      subject,
+      html,
+    });
+    return { simulated: false };
+  } catch (err) {
+    console.error(`[mailer] Failed to send to ${to}: ${err.message}`);
+    return { simulated: false, error: err.message };
+  }
 }
 
 module.exports = { sendOfferEmail, sendConcertUpdateEmail };

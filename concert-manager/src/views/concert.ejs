@@ -101,7 +101,9 @@
           <% sendResult.forEach(r => { %>
             <p>
               <%= r.musician %>:
-              <% if (r.simulated) { %>
+              <% if (r.error) { %>
+                <span class="error">failed to send — <%= r.error %></span>
+              <% } else if (r.simulated) { %>
                 email not sent (SMTP not configured) — logged to server console with the accept/decline links.
               <% } else { %>
                 offer emailed.
