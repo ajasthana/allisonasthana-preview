@@ -1,0 +1,140 @@
+<%- include('partials/head', { title: 'Roster — Concert Manager' }) %>
+<%- include('partials/nav') %>
+  <main class="page page-wide">
+    <div class="page-header">
+      <h1>Roster</h1>
+    </div>
+
+    <% if (error) { %>
+      <p class="error"><%= error %></p>
+    <% } %>
+
+    <% if (importResult) { %>
+      <div class="notice">
+        <p>
+          Imported <%= importResult.total %> row<%= importResult.total === 1 ? '' : 's' %>:
+          <%= importResult.added %> added, <%= importResult.updated %> updated<% if (importResult.skipped.length) { %>, <%= importResult.skipped.length %> skipped<% } %>.
+        </p>
+        <% if (importResult.skipped.length) { %>
+          <ul>
+            <% importResult.skipped.forEach(reason => { %>
+              <li><%= reason %></li>
+            <% }) %>
+          </ul>
+        <% } %>
+      </div>
+    <% } %>
+
+    <form method="post" action="/musicians" class="card">
+      <h2>Add musician</h2>
+      <div class="form-grid">
+        <label>First name <input name="first_name" required></label>
+        <label>Last name <input name="last_name" required></label>
+        <label>Email <input type="email" name="email" required></label>
+        <label>Phone <input name="phone"></label>
+        <label>Instrument <input name="instrument"></label>
+        <label>Type
+          <select name="musician_type">
+            <option value="core">Core</option>
+            <option value="substitute">Substitute</option>
+          </select>
+        </label>
+      </div>
+      <label>Notes <textarea name="notes" rows="2"></textarea></label>
+      <div class="form-actions">
+        <button type="submit" class="button-primary">Add to roster</button>
+      </div>
+    </form>
+
+    <form method="post" action="/musicians/import" enctype="multipart/form-data" class="card">
+      <h2>Import from spreadsheet</h2>
+      <p class="muted">
+        Upload a CSV file with columns for First Name, Last Name (or a single Name column), Email, Phone, Instrument, Type, and Notes (any order, other columns are ignored).
+        Musicians are matched by email — importing again updates existing entries instead of duplicating them.
+        <a href="/musicians/import/template">Download a template</a>.
+      </p>
+      <p class="muted">
+        Have an Excel, Numbers, or Google Sheets file? Export it as CSV first — File &rarr; Save As / Download &rarr; CSV.
+      </p>
+      <div class="form-actions">
+        <input type="file" name="file" accept=".csv" required>
+        <button type="submit" class="button-secondary">Import</button>
+      </div>
+    </form>
+
+    <div class="card">
+      <div class="roster-toolbar">
+        <input type="search" id="roster-search" class="roster-search" placeholder="Search roster…">
+        <div class="filter-group" role="group" aria-label="Filter by type">
+          <button type="button" class="filter-chip is-active" data-filter="all">All</button>
+          <button type="button" class="filter-chip" data-filter="core">Core</button>
+          <button type="button" class="filter-chip" data-filter="substitute">Substitute</button>
+        </div>
+        <select id="instrument-filter" aria-label="Filter by instrument">
+          <option value="all">All instruments</option>
+          <% instruments.forEach(instrument => { %>
+            <option value="<%= instrument.toLowerCase() %>"><%= instrument %></option>
+          <% }) %>
+        </select>
+      </div>
+      <p class="muted roster-hint">Click a column heading to sort. Click a row to view a musician's details.</p>
+
+      <div class="table-scroll table-scroll-fixed">
+        <table class="table" id="roster-table">
+          <thead>
+            <tr>
+              <th data-sort="last_name" data-type="text">Last name</th>
+              <th data-sort="first_name" data-type="text">First name</th>
+              <th data-sort="email" data-type="text">Email</th>
+              <th data-sort="instrument" data-type="text">Instrument</th>
+              <th data-sort="musician_type" data-type="text">Type</th>
+              <th data-sort="phone" data-type="text">Phone</th>
+              <th>Notes</th>
+              <th data-sort="confirmed_count" data-type="number">Confirmed concerts</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% musicians.forEach(m => { %>
+              <% const confirmedList = confirmed[m.id] || []; %>
+              <% const notes = m.notes || ''; %>
+              <tr
+                data-last_name="<%= (m.last_name || '').toLowerCase() %>"
+                data-first_name="<%= (m.first_name || '').toLowerCase() %>"
+                data-email="<%= (m.email || '').toLowerCase() %>"
+                data-instrument="<%= (m.instrument || '').toLowerCase() %>"
+                data-musician_type="<%= m.musician_type %>"
+                data-phone="<%= (m.phone || '').toLowerCase() %>"
+                data-notes="<%= notes.toLowerCase() %>"
+                data-confirmed_count="<%= confirmedList.length %>"
+                data-search="<%= [m.first_name, m.last_name, m.email, m.instrument, m.phone, notes].join(' ').toLowerCase() %>"
+                data-href="/musicians/<%= m.id %>/edit"
+                class="clickable-row"
+              >
+                <td><%= m.last_name %></td>
+                <td><%= m.first_name %></td>
+                <td><%= m.email %></td>
+                <td><%= m.instrument || '' %></td>
+                <td><span class="pill <%= m.musician_type === 'substitute' ? 'pill-declined' : 'pill-accepted' %>"><%= m.musician_type === 'substitute' ? 'Substitute' : 'Core' %></span></td>
+                <td><%= m.phone || '' %></td>
+                <td class="notes-cell" title="<%= notes %>"><%= notes.length > 30 ? notes.slice(0, 30) + '…' : notes %></td>
+                <td><%= confirmedList.length ? confirmedList.join(', ') : '' %></td>
+                <td class="row-actions">
+                  <a href="/musicians/<%= m.id %>/edit">Edit</a>
+                  <form method="post" action="/musicians/<%= m.id %>/delete" onsubmit="return confirm('Remove this musician?');" class="inline">
+                    <button type="submit" class="link-button danger">Remove</button>
+                  </form>
+                </td>
+              </tr>
+            <% }) %>
+            <% if (!musicians.length) { %>
+              <tr><td colspan="9" class="muted">No musicians yet.</td></tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+  <script src="/roster.js" defer></script>
+</body>
+</html>

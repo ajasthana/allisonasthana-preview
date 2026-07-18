@@ -1,0 +1,34 @@
+<%- include('partials/head', { title: 'Edit musician — Concert Manager' }) %>
+<%- include('partials/nav') %>
+  <main class="page">
+    <div class="page-header">
+      <h1>Edit musician</h1>
+    </div>
+
+    <% if (error) { %>
+      <p class="error"><%= error %></p>
+    <% } %>
+
+    <form method="post" action="/musicians/<%= musician.id %>/edit" class="card">
+      <div class="form-grid">
+        <label>First name <input name="first_name" value="<%= musician.first_name %>" required></label>
+        <label>Last name <input name="last_name" value="<%= musician.last_name %>" required></label>
+        <label>Email <input type="email" name="email" value="<%= musician.email %>" required></label>
+        <label>Phone <input name="phone" value="<%= musician.phone || '' %>"></label>
+        <label>Instrument <input name="instrument" value="<%= musician.instrument || '' %>"></label>
+        <label>Type
+          <select name="musician_type">
+            <option value="core" <%= musician.musician_type !== 'substitute' ? 'selected' : '' %>>Core</option>
+            <option value="substitute" <%= musician.musician_type === 'substitute' ? 'selected' : '' %>>Substitute</option>
+          </select>
+        </label>
+      </div>
+      <label>Notes <textarea name="notes" rows="2"><%= musician.notes || '' %></textarea></label>
+      <div class="form-actions">
+        <button type="submit" class="button-primary">Save changes</button>
+        <a href="/musicians" class="button-secondary">Cancel</a>
+      </div>
+    </form>
+  </main>
+</body>
+</html>

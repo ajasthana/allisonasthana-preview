@@ -1,0 +1,199 @@
+<%- include('partials/head', { title: concert.title + ' — Concert Manager' }) %>
+<%- include('partials/nav') %>
+  <main class="page">
+    <div class="page-header">
+      <h1><%= concert.title %></h1>
+      <span class="pill status-<%= concert.status %>"><%= concert.status.replace('_', ' ') %></span>
+    </div>
+    <p class="muted">
+      <%= concert.venue || '' %><%= concert.date ? ' · ' + concert.date : '' %>
+      <% if (concert.call_time) { %> · call <%= formatTime12h(concert.call_time) %><% } %>
+      <% if (concert.concert_time) { %> · downbeat <%= formatTime12h(concert.concert_time) %><% } %>
+    </p>
+    <% if (concert.notes) { %><p><%= concert.notes %></p><% } %>
+    <% if (concert.sheet_music_url) { %><p><a href="<%= concert.sheet_music_url %>" target="_blank" rel="noopener">Sheet music &rarr;</a></p><% } %>
+
+    <% if (notifiedCount !== null) { %>
+      <div class="notice">
+        <% if (notifiedCount > 0) { %>
+          Notified <%= notifiedCount %> confirmed musician<%= notifiedCount === 1 ? '' : 's' %> of the latest details.
+        <% } else { %>
+          No confirmed musicians to notify yet.
+        <% } %>
+      </div>
+    <% } %>
+
+    <div class="row-actions">
+      <a href="/concerts/<%= concert.slug %>/edit" class="button-secondary">Edit details</a>
+      <form method="post" action="/concerts/<%= concert.slug %>/duplicate" class="inline">
+        <button type="submit" class="button-secondary">Duplicate for another date</button>
+      </form>
+      <form method="post" action="/concerts/<%= concert.slug %>/notify" onsubmit="return confirm('Email everyone who has already accepted this concert with the current details?');" class="inline">
+        <button type="submit" class="button-secondary">Notify musicians of update</button>
+      </form>
+      <form method="post" action="/concerts/<%= concert.slug %>/delete" onsubmit="return confirm('Delete this concert and all its offers?');" class="inline">
+        <button type="submit" class="link-button danger">Delete concert</button>
+      </form>
+    </div>
+
+    <section class="card">
+      <h2>Repertoire</h2>
+      <table class="table">
+        <thead><tr><th>Composer</th><th>Title</th><th>Movement</th><th>Duration</th><th>Notes</th><th></th></tr></thead>
+        <tbody>
+          <% repertoire.forEach(piece => { %>
+            <tr>
+              <td><%= piece.composer || '' %></td>
+              <td><%= piece.title %></td>
+              <td><%= piece.movement || '' %></td>
+              <td><%= piece.duration || '' %></td>
+              <td><%= piece.instrumentation_notes || '' %></td>
+              <td class="row-actions">
+                <a href="/concerts/<%= concert.slug %>/repertoire/<%= piece.id %>/edit">Edit</a>
+                <form method="post" action="/concerts/<%= concert.slug %>/repertoire/<%= piece.id %>/delete" class="inline">
+                  <button type="submit" class="link-button danger">Remove</button>
+                </form>
+              </td>
+            </tr>
+          <% }) %>
+          <% if (!repertoire.length) { %>
+            <tr><td colspan="6" class="muted">No repertoire added yet.</td></tr>
+          <% } %>
+        </tbody>
+      </table>
+      <form method="post" action="/concerts/<%= concert.slug %>/repertoire" class="form-grid">
+        <label>Composer <input name="composer"></label>
+        <label>Title <input name="title" required></label>
+        <label>Movement <input name="movement"></label>
+        <label>Duration <input name="duration" placeholder="e.g. 8:00"></label>
+        <label>Instrumentation notes <input name="instrumentation_notes"></label>
+        <button type="submit" class="button-secondary">Add piece</button>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>Rehearsals</h2>
+      <table class="table">
+        <thead><tr><th>Date</th><th>Time</th><th>Location</th><th>Notes</th><th></th></tr></thead>
+        <tbody>
+          <% rehearsals.forEach(r => { %>
+            <tr>
+              <td><%= r.date || '' %></td>
+              <td><%= formatTime12h(r.start_time) %><%= r.end_time ? '–' + formatTime12h(r.end_time) : '' %></td>
+              <td><%= r.location || '' %></td>
+              <td><%= r.notes || '' %></td>
+              <td class="row-actions">
+                <a href="/concerts/<%= concert.slug %>/rehearsals/<%= r.id %>/edit">Edit</a>
+                <form method="post" action="/concerts/<%= concert.slug %>/rehearsals/<%= r.id %>/delete" class="inline">
+                  <button type="submit" class="link-button danger">Remove</button>
+                </form>
+              </td>
+            </tr>
+          <% }) %>
+          <% if (!rehearsals.length) { %>
+            <tr><td colspan="5" class="muted">No rehearsals added yet.</td></tr>
+          <% } %>
+        </tbody>
+      </table>
+      <form method="post" action="/concerts/<%= concert.slug %>/rehearsals" class="form-grid">
+        <label>Date <input type="date" name="date"></label>
+        <label>Start <input type="time" name="start_time"></label>
+        <label>End <input type="time" name="end_time"></label>
+        <label>Location <input name="location"></label>
+        <label>Notes <input name="notes"></label>
+        <button type="submit" class="button-secondary">Add rehearsal</button>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>Offers</h2>
+
+      <% if (sendResult) { %>
+        <div class="notice">
+          <% sendResult.forEach(r => { %>
+            <p>
+              <%= r.musician %>:
+              <% if (r.error) { %>
+                <span class="error">failed to send — <%= r.error %></span>
+              <% } else if (r.simulated) { %>
+                email not sent (SMTP not configured) — logged to server console with the accept/decline links.
+              <% } else { %>
+                offer emailed.
+              <% } %>
+            </p>
+          <% }) %>
+        </div>
+      <% } %>
+
+      <table class="table">
+        <thead><tr><th>Musician</th><th>Role/part</th><th>Fee</th><th>Status</th><th>Sent</th><th></th></tr></thead>
+        <tbody>
+          <% offers.forEach(o => { %>
+            <tr>
+              <td><%= o.musician_name %><br><span class="muted"><%= o.musician_email %></span></td>
+              <td><%= o.role_part || '' %></td>
+              <td><%= o.fee || '' %></td>
+              <td><span class="pill status-<%= o.status %>"><%= o.status %></span></td>
+              <td><%= o.sent_at || '' %></td>
+              <td>
+                <form method="post" action="/offers/<%= o.id %>/delete">
+                  <button type="submit" class="link-button danger">Remove</button>
+                </form>
+              </td>
+            </tr>
+          <% }) %>
+          <% if (!offers.length) { %>
+            <tr><td colspan="6" class="muted">No offers sent yet.</td></tr>
+          <% } %>
+        </tbody>
+      </table>
+
+      <form method="post" action="/concerts/<%= concert.slug %>/offers" class="offer-form">
+        <div class="offer-form-grid">
+          <fieldset class="offer-musicians">
+            <legend>Send offers to</legend>
+            <% if (musicians.length) { %>
+              <input type="search" id="offer-musician-search" class="roster-search" placeholder="Search musicians…">
+            <% } %>
+            <div class="musician-picker" id="musician-picker">
+              <% musicians.forEach(m => { %>
+                <label class="checkbox-row" data-search="<%= [m.first_name, m.last_name, m.instrument].join(' ').toLowerCase() %>">
+                  <input type="checkbox" name="musician_id" value="<%= m.id %>">
+                  <%= m.first_name %> <%= m.last_name %> <span class="muted"><%= m.instrument || '' %><%= m.musician_type === 'substitute' ? ' · sub' : '' %></span>
+                </label>
+              <% }) %>
+            </div>
+            <% if (!musicians.length) { %>
+              <p class="muted">Add musicians to your roster first.</p>
+            <% } %>
+          </fieldset>
+
+          <div class="offer-details">
+            <div class="offer-details-row">
+              <label>Role / part <input name="role_part" placeholder="e.g. 2nd flute"></label>
+              <label>Fee <input name="fee" placeholder="<%= concert.fee_default || 'e.g. $150' %>"></label>
+            </div>
+            <label class="offer-message">Message to musicians (optional) <textarea name="custom_message" placeholder="e.g. Please let me know your availability for the dress rehearsal ASAP."></textarea></label>
+          </div>
+        </div>
+        <div class="form-actions offer-form-actions">
+          <button type="submit" class="button-primary">Send offers</button>
+        </div>
+      </form>
+    </section>
+  </main>
+  <script>
+    (function () {
+      const search = document.getElementById("offer-musician-search");
+      const picker = document.getElementById("musician-picker");
+      if (!search || !picker) return;
+      search.addEventListener("input", () => {
+        const query = search.value.trim().toLowerCase();
+        picker.querySelectorAll(".checkbox-row").forEach((row) => {
+          row.style.display = !query || row.dataset.search.includes(query) ? "" : "none";
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

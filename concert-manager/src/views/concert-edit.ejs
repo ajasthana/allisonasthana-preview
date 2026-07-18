@@ -1,0 +1,30 @@
+<%- include('partials/head', { title: 'Edit concert — Concert Manager' }) %>
+<%- include('partials/nav') %>
+  <main class="page">
+    <div class="page-header">
+      <h1>Edit concert details</h1>
+    </div>
+
+    <% if (error) { %>
+      <p class="error"><%= error %></p>
+    <% } %>
+
+    <form method="post" action="/concerts/<%= concert.slug %>/edit" class="card">
+      <div class="form-grid">
+        <label>Title <input name="title" value="<%= concert.title %>" required></label>
+        <label>Venue <input name="venue" value="<%= concert.venue || '' %>"></label>
+        <label>Date <input type="date" name="date" value="<%= concert.date || '' %>"></label>
+        <label>Call time <input type="time" name="call_time" value="<%= concert.call_time || '' %>"></label>
+        <label>Concert time <input type="time" name="concert_time" value="<%= concert.concert_time || '' %>"></label>
+        <label>Default fee <input name="fee_default" value="<%= concert.fee_default || '' %>"></label>
+        <label>Sheet music link <input type="url" name="sheet_music_url" value="<%= concert.sheet_music_url || '' %>" placeholder="https://..."></label>
+      </div>
+      <label>Notes <textarea name="notes" rows="2"><%= concert.notes || '' %></textarea></label>
+      <div class="form-actions">
+        <button type="submit" class="button-primary">Save changes</button>
+        <a href="/concerts/<%= concert.slug %>" class="button-secondary">Cancel</a>
+      </div>
+    </form>
+  </main>
+</body>
+</html>

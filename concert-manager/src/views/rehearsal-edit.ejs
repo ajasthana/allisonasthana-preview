@@ -1,0 +1,24 @@
+<%- include('partials/head', { title: 'Edit rehearsal — Concert Manager' }) %>
+<%- include('partials/nav') %>
+  <main class="page">
+    <div class="page-header">
+      <h1>Edit rehearsal</h1>
+    </div>
+    <p class="muted">For <%= concert.title %></p>
+
+    <form method="post" action="/concerts/<%= concert.slug %>/rehearsals/<%= rehearsal.id %>/edit" class="card">
+      <div class="form-grid">
+        <label>Date <input type="date" name="date" value="<%= rehearsal.date || '' %>"></label>
+        <label>Start <input type="time" name="start_time" value="<%= rehearsal.start_time || '' %>"></label>
+        <label>End <input type="time" name="end_time" value="<%= rehearsal.end_time || '' %>"></label>
+        <label>Location <input name="location" value="<%= rehearsal.location || '' %>"></label>
+        <label>Notes <input name="notes" value="<%= rehearsal.notes || '' %>"></label>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="button-primary">Save changes</button>
+        <a href="/concerts/<%= concert.slug %>" class="button-secondary">Cancel</a>
+      </div>
+    </form>
+  </main>
+</body>
+</html>
