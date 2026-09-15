@@ -15,7 +15,9 @@
         <label>Ensemble name <input name="name" value="<%= profile.name %>" required></label>
         <label>Contact email <input type="email" name="email" value="<%= profile.email %>"></label>
         <label>Website <input name="website" value="<%= profile.website %>"></label>
+        <label>Reply-to email <input type="email" name="reply_to" value="<%= profile.reply_to %>"></label>
       </div>
+      <p class="muted">Musician replies to offer, update, and reminder emails go to the reply-to address. We'll also notify that address when a musician leaves a note while accepting or declining.</p>
       <button type="submit" class="button-primary">Save</button>
     </form>
   </main>

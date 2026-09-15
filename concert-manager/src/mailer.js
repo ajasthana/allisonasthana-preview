@@ -66,9 +66,13 @@ function concertDetailsHtml({ concert, repertoire, rehearsals }) {
   `;
 }
 
+function messageHtml(message) {
+  if (!message) return "";
+  return `<p style="background:#fdf0e2;border-left:3px solid #e8792f;padding:10px 14px;margin:16px 0;">${escapeHtml(message).replace(/\n/g, "<br>")}</p>`;
+}
+
 function customMessageHtml(offer) {
-  if (!offer || !offer.custom_message) return "";
-  return `<p style="background:#fdf0e2;border-left:3px solid #e8792f;padding:10px 14px;margin:16px 0;">${escapeHtml(offer.custom_message).replace(/\n/g, "<br>")}</p>`;
+  return messageHtml(offer && offer.custom_message);
 }
 
 function ensembleFooterHtml(ensemble) {
@@ -116,16 +120,63 @@ async function sendOfferEmail({ musician, concert, repertoire, rehearsals, offer
 
   const subject = ensemble && ensemble.name ? `Concert offer from ${ensemble.name}: ${concert.title}` : `Concert offer: ${concert.title}`;
 
-  return deliver({ to: musician.email, subject, html, fallbackLinks: { Accept: acceptUrl, Decline: declineUrl } });
+  return deliver({
+    to: musician.email,
+    subject,
+    html,
+    fallbackLinks: { Accept: acceptUrl, Decline: declineUrl },
+    replyTo: ensemble && ensemble.reply_to,
+  });
 }
 
-async function sendConcertUpdateEmail({ musician, concert, repertoire, rehearsals, offer, ensemble, baseUrl }) {
+async function sendOfferReminderEmail({ musician, concert, repertoire, rehearsals, offer, ensemble, baseUrl }) {
+  const acceptUrl = `${baseUrl}/offers/${offer.token}/respond?decision=accept`;
+  const declineUrl = `${baseUrl}/offers/${offer.token}/respond?decision=decline`;
+  const detailsUrl = `${baseUrl}/offers/${offer.token}`;
+
+  const html = wrapEmail(`
+    ${concertHeaderHtml({ concert, ensemble })}
+    <p>Hi ${escapeHtml(fullName(musician))},</p>
+    <p>Just a friendly reminder — you have a pending offer for a spot on this concert${
+      offer.role_part ? ` as <strong>${escapeHtml(offer.role_part)}</strong>` : ""
+    }${offer.fee ? `, fee: <strong>${escapeHtml(offer.fee)}</strong>` : ""} that we haven't heard back on yet.</p>
+
+    ${customMessageHtml(offer)}
+
+    ${concertDetailsHtml({ concert, repertoire, rehearsals })}
+
+    <div style="margin: 28px 0;">
+      <a href="${acceptUrl}" style="background:#e8792f;color:#fff8f0;padding:12px 20px;border-radius:8px;text-decoration:none;margin-right:12px;">Accept</a>
+      <a href="${declineUrl}" style="background:#f1ded0;color:#8a4a26;padding:12px 20px;border-radius:8px;text-decoration:none;">Decline</a>
+    </div>
+    <p><a href="${detailsUrl}">View concert details &rarr;</a></p>
+
+    <p style="color:#a9977f;font-size:13px;">This link is unique to you — no login required. Bookmark it to revisit repertoire and rehearsal details anytime.</p>
+    ${ensembleFooterHtml(ensemble)}
+  `);
+
+  const subject = ensemble && ensemble.name
+    ? `Reminder — concert offer from ${ensemble.name}: ${concert.title}`
+    : `Reminder — concert offer: ${concert.title}`;
+
+  return deliver({
+    to: musician.email,
+    subject,
+    html,
+    fallbackLinks: { Accept: acceptUrl, Decline: declineUrl },
+    replyTo: ensemble && ensemble.reply_to,
+  });
+}
+
+async function sendConcertUpdateEmail({ musician, concert, repertoire, rehearsals, offer, ensemble, baseUrl, message }) {
   const detailsUrl = `${baseUrl}/offers/${offer.token}`;
 
   const html = wrapEmail(`
     ${concertHeaderHtml({ concert, ensemble })}
     <p>Hi ${escapeHtml(fullName(musician))},</p>
     <p>Details for this concert were just updated. Here's the current information:</p>
+
+    ${messageHtml(message)}
 
     ${concertDetailsHtml({ concert, repertoire, rehearsals })}
 
@@ -137,10 +188,33 @@ async function sendConcertUpdateEmail({ musician, concert, repertoire, rehearsal
     ? `Updated: ${concert.title} (${ensemble.name})`
     : `Updated: ${concert.title}`;
 
-  return deliver({ to: musician.email, subject, html, fallbackLinks: { "Concert details": detailsUrl } });
+  return deliver({
+    to: musician.email,
+    subject,
+    html,
+    fallbackLinks: { "Concert details": detailsUrl },
+    replyTo: ensemble && ensemble.reply_to,
+  });
 }
 
-async function deliver({ to, subject, html, fallbackLinks }) {
+async function sendResponseNoteNotification({ musician, concert, offer, decision, note, ensemble, baseUrl }) {
+  const notifyTo = ensemble && (ensemble.reply_to || ensemble.email);
+  if (!notifyTo) return { simulated: true };
+
+  const adminUrl = `${baseUrl}/concerts/${concert.slug}`;
+  const html = wrapEmail(`
+    <h2 style="margin: 0 0 4px;">${escapeHtml(fullName(musician))} ${escapeHtml(decision)} an offer</h2>
+    <p style="color: #8a7364; margin-top: 0;">${escapeHtml(concert.title)}${concert.date ? ` &middot; ${escapeHtml(concert.date)}` : ""}</p>
+    ${messageHtml(note)}
+    <p style="margin: 28px 0;"><a href="${adminUrl}" style="background:#e8792f;color:#fff8f0;padding:12px 20px;border-radius:8px;text-decoration:none;">View concert &rarr;</a></p>
+  `);
+
+  const subject = `${fullName(musician)} ${decision} — ${concert.title}`;
+
+  return deliver({ to: notifyTo, subject, html, fallbackLinks: { "Concert admin page": adminUrl } });
+}
+
+async function deliver({ to, subject, html, fallbackLinks, replyTo }) {
   if (!transport) {
     console.warn(`[mailer] SMTP not configured — email NOT sent. Would have emailed ${to}: ${subject}`);
     Object.entries(fallbackLinks).forEach(([label, url]) => console.warn(`[mailer] ${label}: ${url}`));
@@ -153,6 +227,7 @@ async function deliver({ to, subject, html, fallbackLinks }) {
       to,
       subject,
       html,
+      replyTo: replyTo || undefined,
     });
     return { simulated: false };
   } catch (err) {
@@ -161,4 +236,9 @@ async function deliver({ to, subject, html, fallbackLinks }) {
   }
 }
 
-module.exports = { sendOfferEmail, sendConcertUpdateEmail };
+module.exports = {
+  sendOfferEmail,
+  sendOfferReminderEmail,
+  sendConcertUpdateEmail,
+  sendResponseNoteNotification,
+};

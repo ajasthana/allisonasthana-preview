@@ -26,6 +26,7 @@
           <p>Confirm you want to <strong><%= confirmDecision %></strong> this offer?</p>
           <form method="post" action="/offers/<%= offer.token %>/respond">
             <input type="hidden" name="decision" value="<%= confirmDecision %>">
+            <label class="offer-message">Reason or questions (optional) <textarea name="note" placeholder="e.g. I have a conflict with the dress rehearsal, or a question about the fee."></textarea></label>
             <button type="submit" class="button-primary">Yes, <%= confirmDecision %></button>
           </form>
           <a href="/offers/<%= offer.token %>">Cancel</a>
@@ -37,6 +38,9 @@
         </div>
       <% } else { %>
         <p class="pill status-<%= offer.status %>">You <%= offer.status %> this offer<%= offer.responded_at ? ' on ' + offer.responded_at : '' %>.</p>
+        <% if (offer.response_note) { %>
+          <p class="custom-message"><%= offer.response_note %></p>
+        <% } %>
       <% } %>
     </div>
 
