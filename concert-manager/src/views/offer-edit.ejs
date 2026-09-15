@@ -1,0 +1,26 @@
+<%- include('partials/head', { title: 'Edit offer — Concert Manager' }) %>
+<%- include('partials/nav') %>
+  <main class="page">
+    <div class="page-header">
+      <h1>Edit offer</h1>
+    </div>
+    <p class="muted"><%= offer.musician_name %> &middot; <%= concert.title %></p>
+
+    <% if (error) { %>
+      <p class="error"><%= error %></p>
+    <% } %>
+
+    <form method="post" action="/offers/<%= offer.id %>/edit" class="card">
+      <div class="form-grid">
+        <label>Role / part <input name="role_part" value="<%= offer.role_part || '' %>"></label>
+        <label>Fee <input name="fee" value="<%= offer.fee || '' %>"></label>
+      </div>
+      <p class="muted">This updates the offer record only — it doesn't re-email the musician. Use "Notify musicians of update" on the concert page if they need to know about the change.</p>
+      <div class="form-actions">
+        <button type="submit" class="button-primary">Save changes</button>
+        <a href="/concerts/<%= concert.slug %>" class="button-secondary">Cancel</a>
+      </div>
+    </form>
+  </main>
+</body>
+</html>

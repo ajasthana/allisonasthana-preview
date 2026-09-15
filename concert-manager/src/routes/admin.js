@@ -580,6 +580,38 @@ router.post("/concerts/:slug/offers", requireAuth, async (req, res) => {
   res.render("concert", { ...refreshed, sendResult: results, notifiedCount: null });
 });
 
+router.get("/offers/:id/edit", requireAuth, (req, res) => {
+  const offer = db
+    .prepare(
+      `SELECT offers.*, (musicians.first_name || ' ' || musicians.last_name) AS musician_name
+       FROM offers JOIN musicians ON musicians.id = offers.musician_id
+       WHERE offers.id = ?`
+    )
+    .get(req.params.id);
+  if (!offer) return res.status(404).send("Offer not found");
+
+  const concert = db.prepare("SELECT * FROM concerts WHERE id = ?").get(offer.concert_id);
+  if (!concert) return res.status(404).send("Concert not found");
+
+  res.render("offer-edit", { concert, offer, error: null });
+});
+
+router.post("/offers/:id/edit", requireAuth, (req, res) => {
+  const offer = db.prepare("SELECT * FROM offers WHERE id = ?").get(req.params.id);
+  if (!offer) return res.status(404).send("Offer not found");
+
+  const concert = db.prepare("SELECT * FROM concerts WHERE id = ?").get(offer.concert_id);
+  if (!concert) return res.status(404).send("Concert not found");
+
+  const { role_part, fee } = req.body;
+  db.prepare("UPDATE offers SET role_part = ?, fee = ? WHERE id = ?").run(
+    role_part || null,
+    fee || null,
+    offer.id
+  );
+  res.redirect(`/concerts/${concert.slug}`);
+});
+
 router.post("/offers/:id/remind", requireAuth, async (req, res) => {
   const offer = db.prepare("SELECT * FROM offers WHERE id = ?").get(req.params.id);
   if (!offer) return res.status(404).send("Offer not found");
