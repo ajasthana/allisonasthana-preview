@@ -156,6 +156,7 @@
                 <% } %>
               </td>
               <td class="row-actions">
+                <a href="/offers/<%= o.id %>/edit">Edit</a>
                 <% if (o.status === 'pending') { %>
                   <form method="post" action="/offers/<%= o.id %>/remind" class="inline">
                     <button type="submit" class="link-button">Send reminder</button>
