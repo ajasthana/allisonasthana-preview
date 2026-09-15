@@ -49,7 +49,9 @@ If your roster is in Excel, Numbers, or Google Sheets, export it as CSV first (F
 
 Each concert can have a sheet music link, shown on the admin page and in offer/update emails. Every offer email includes a persistent "View concert details" link in addition to Accept/Decline — musicians can bookmark it to check repertoire and rehearsal info anytime.
 
-Edits to a concert's details, repertoire, or rehearsals are **not** emailed automatically. When you're ready to let already-**accepted** musicians know, click "Notify musicians of update" at the top of the concert page — it sends the current info to everyone who's accepted (pending/declined musicians aren't included), and shows how many were notified. Make all your edits first, then notify once.
+Edits to a concert's details, repertoire, or rehearsals are **not** emailed automatically. When you're ready to let already-**accepted** musicians know, use "Notify musicians of update" on the concert page — it sends the current info to everyone who's accepted (pending/declined musicians aren't included), and shows how many were notified. Make all your edits first, then notify once. The optional message box on that form is included at the top of the email, so it also works as a quick way to send a mass note (e.g. a parking change, a schedule reminder) to everyone confirmed for that concert.
+
+Offers that are still pending can be nudged with "Send reminder" in the offers table — it re-sends the same offer (with its original accept/decline links) as a reminder email, and the table tracks how many times and when each musician was last reminded, so you can judge who's overdue for a follow-up.
 
 Repeating a program on another date? Use "Duplicate for another date" on the concert page — it copies the title, venue, times, fee, sheet music link, and repertoire into a new concert and takes you to its edit page to set the new date. Rehearsals and offers are intentionally not copied, since those usually differ per date.
 
@@ -58,6 +60,14 @@ When sending offers, the optional "Message to musicians" field lets you add a no
 Each concert's URL is based on its title (e.g. `/concerts/winter-gala`) rather than a numeric ID, generated once when the concert is created. Renaming a concert later doesn't change its URL, so existing links and bookmarks keep working. Two concerts with the same title get `-2`, `-3`, etc. appended automatically.
 
 Times (call time, downbeat, rehearsal times) are always shown in 12-hour format (e.g. 6:00 PM) wherever they're displayed, including in emails — the underlying time picker fields in edit forms are unaffected.
+
+## Offers and responses
+
+When a musician accepts or declines an offer, they can optionally add a note — a reason, a scheduling conflict, or a question. If they do, the ensemble's reply-to address (see Ensemble Profile below) gets an email with the note so it doesn't go unseen, and the note also shows up next to that offer in the concert's offers table and on the musician's own offer page.
+
+## Ensemble Profile
+
+The ensemble name, contact email, and website shown in offer/update emails are set on the Ensemble Profile page. That page also has a **reply-to email** — this is where musicians land if they hit "reply" on an offer, update, or reminder email, and where accept/decline notes get sent. It defaults to katie@monarchchamberplayers.org; change it there if replies should route elsewhere.
 
 ## Dashboard
 

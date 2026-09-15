@@ -84,6 +84,8 @@ db.prepare(
   `INSERT OR IGNORE INTO ensemble_profile (id, name, email, website) VALUES (1, ?, ?, ?)`
 ).run("Monarch Chamber Players", "info@monarchchamberplayers.org", "monarchchamberplayers.org");
 
+const DEFAULT_REPLY_TO = "katie@monarchchamberplayers.org";
+
 function columnExists(table, column) {
   return db
     .prepare(`PRAGMA table_info(${table})`)
@@ -109,6 +111,21 @@ if (!columnExists("offers", "custom_message")) {
 if (!columnExists("concerts", "slug")) {
   db.exec("ALTER TABLE concerts ADD COLUMN slug TEXT;");
 }
+if (!columnExists("offers", "response_note")) {
+  db.exec("ALTER TABLE offers ADD COLUMN response_note TEXT;");
+}
+if (!columnExists("offers", "reminder_count")) {
+  db.exec("ALTER TABLE offers ADD COLUMN reminder_count INTEGER NOT NULL DEFAULT 0;");
+}
+if (!columnExists("offers", "last_reminded_at")) {
+  db.exec("ALTER TABLE offers ADD COLUMN last_reminded_at TEXT;");
+}
+if (!columnExists("ensemble_profile", "reply_to")) {
+  db.exec("ALTER TABLE ensemble_profile ADD COLUMN reply_to TEXT NOT NULL DEFAULT '';");
+}
+db.prepare(
+  "UPDATE ensemble_profile SET reply_to = ? WHERE id = 1 AND (reply_to IS NULL OR reply_to = '')"
+).run(DEFAULT_REPLY_TO);
 
 // Backfill slugs for concerts created before this migration existed.
 const unslugged = db.prepare("SELECT id, title FROM concerts WHERE slug IS NULL OR slug = ''").all();

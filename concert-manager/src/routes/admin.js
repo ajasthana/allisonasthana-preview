@@ -3,7 +3,11 @@ const crypto = require("crypto");
 const multer = require("multer");
 const db = require("../db");
 const { requireAuth } = require("../auth");
-const { sendOfferEmail, sendConcertUpdateEmail } = require("../mailer");
+const {
+  sendOfferEmail,
+  sendOfferReminderEmail,
+  sendConcertUpdateEmail,
+} = require("../mailer");
 const { verifyPassword } = require("../password");
 const { parseRosterFile, templateCsv } = require("../roster-import");
 const { fullName } = require("../names");
@@ -290,11 +294,12 @@ router.get("/ensemble-profile", requireAuth, (req, res) => {
 });
 
 router.post("/ensemble-profile", requireAuth, (req, res) => {
-  const { name, email, website } = req.body;
-  db.prepare("UPDATE ensemble_profile SET name = ?, email = ?, website = ? WHERE id = 1").run(
+  const { name, email, website, reply_to } = req.body;
+  db.prepare("UPDATE ensemble_profile SET name = ?, email = ?, website = ?, reply_to = ? WHERE id = 1").run(
     name || "",
     email || "",
-    website || ""
+    website || "",
+    reply_to || ""
   );
   const profile = db.prepare("SELECT * FROM ensemble_profile WHERE id = 1").get();
   res.render("ensemble-profile", { profile, saved: true });
@@ -302,7 +307,7 @@ router.post("/ensemble-profile", requireAuth, (req, res) => {
 
 // --- Concerts ----------------------------------------------------------
 
-async function notifyConcertUpdate(concertId, req) {
+async function notifyConcertUpdate(concertId, req, message) {
   const concert = db.prepare("SELECT * FROM concerts WHERE id = ?").get(concertId);
   if (!concert) return 0;
 
@@ -321,7 +326,7 @@ async function notifyConcertUpdate(concertId, req) {
 
   for (const offer of acceptedOffers) {
     const musician = { first_name: offer.first_name, last_name: offer.last_name, email: offer.musician_email };
-    await sendConcertUpdateEmail({ musician, concert, repertoire, rehearsals, offer, ensemble, baseUrl });
+    await sendConcertUpdateEmail({ musician, concert, repertoire, rehearsals, offer, ensemble, baseUrl, message });
   }
 
   return acceptedOffers.length;
@@ -331,7 +336,7 @@ router.post("/concerts/:slug/notify", requireAuth, async (req, res) => {
   const concert = db.prepare("SELECT * FROM concerts WHERE slug = ?").get(req.params.slug);
   if (!concert) return res.status(404).send("Concert not found");
 
-  const notified = await notifyConcertUpdate(concert.id, req);
+  const notified = await notifyConcertUpdate(concert.id, req, req.body.message || null);
   res.redirect(`/concerts/${concert.slug}?notified=${notified}`);
 });
 
@@ -573,6 +578,29 @@ router.post("/concerts/:slug/offers", requireAuth, async (req, res) => {
   };
 
   res.render("concert", { ...refreshed, sendResult: results, notifiedCount: null });
+});
+
+router.post("/offers/:id/remind", requireAuth, async (req, res) => {
+  const offer = db.prepare("SELECT * FROM offers WHERE id = ?").get(req.params.id);
+  if (!offer) return res.status(404).send("Offer not found");
+
+  const concert = db.prepare("SELECT * FROM concerts WHERE id = ?").get(offer.concert_id);
+  if (!concert) return res.status(404).send("Concert not found");
+
+  if (offer.status === "pending") {
+    const musician = db.prepare("SELECT * FROM musicians WHERE id = ?").get(offer.musician_id);
+    const repertoire = db.prepare("SELECT * FROM repertoire WHERE concert_id = ? ORDER BY sort_order, id").all(concert.id);
+    const rehearsals = db.prepare("SELECT * FROM rehearsals WHERE concert_id = ? ORDER BY date, start_time").all(concert.id);
+    const ensemble = db.prepare("SELECT * FROM ensemble_profile WHERE id = 1").get();
+    const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get("host")}`;
+
+    await sendOfferReminderEmail({ musician, concert, repertoire, rehearsals, offer, ensemble, baseUrl });
+    db.prepare(
+      "UPDATE offers SET reminder_count = reminder_count + 1, last_reminded_at = datetime('now') WHERE id = ?"
+    ).run(offer.id);
+  }
+
+  res.redirect(`/concerts/${concert.slug}`);
 });
 
 router.post("/offers/:id/delete", requireAuth, (req, res) => {

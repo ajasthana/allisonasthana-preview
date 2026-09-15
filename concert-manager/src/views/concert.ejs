@@ -28,13 +28,21 @@
       <form method="post" action="/concerts/<%= concert.slug %>/duplicate" class="inline">
         <button type="submit" class="button-secondary">Duplicate for another date</button>
       </form>
-      <form method="post" action="/concerts/<%= concert.slug %>/notify" onsubmit="return confirm('Email everyone who has already accepted this concert with the current details?');" class="inline">
-        <button type="submit" class="button-secondary">Notify musicians of update</button>
-      </form>
       <form method="post" action="/concerts/<%= concert.slug %>/delete" onsubmit="return confirm('Delete this concert and all its offers?');" class="inline">
         <button type="submit" class="link-button danger">Delete concert</button>
       </form>
     </div>
+
+    <section class="card">
+      <h2>Notify musicians of update</h2>
+      <p class="muted">Emails everyone who has accepted this concert with the current details (pending/declined musicians aren't included). Add a message below if there's something specific to call out — this also doubles as a quick way to send a mass email to confirmed musicians.</p>
+      <form method="post" action="/concerts/<%= concert.slug %>/notify" onsubmit="return confirm('Email everyone who has already accepted this concert with the current details?');">
+        <label class="offer-message">Message (optional) <textarea name="message" placeholder="e.g. Parking has changed for this venue — see updated details below."></textarea></label>
+        <div class="form-actions">
+          <button type="submit" class="button-secondary">Send update to confirmed musicians</button>
+        </div>
+      </form>
+    </section>
 
     <section class="card">
       <h2>Repertoire</h2>
@@ -126,24 +134,41 @@
       <% } %>
 
       <table class="table">
-        <thead><tr><th>Musician</th><th>Role/part</th><th>Fee</th><th>Status</th><th>Sent</th><th></th></tr></thead>
+        <thead><tr><th>Musician</th><th>Role/part</th><th>Fee</th><th>Status</th><th>Sent</th><th>Reminders</th><th></th></tr></thead>
         <tbody>
           <% offers.forEach(o => { %>
             <tr>
               <td><%= o.musician_name %><br><span class="muted"><%= o.musician_email %></span></td>
               <td><%= o.role_part || '' %></td>
               <td><%= o.fee || '' %></td>
-              <td><span class="pill status-<%= o.status %>"><%= o.status %></span></td>
-              <td><%= o.sent_at || '' %></td>
               <td>
-                <form method="post" action="/offers/<%= o.id %>/delete">
+                <span class="pill status-<%= o.status %>"><%= o.status %></span>
+                <% if (o.response_note) { %>
+                  <p class="custom-message"><%= o.response_note %></p>
+                <% } %>
+              </td>
+              <td><%= o.sent_at || '' %></td>
+              <td class="muted">
+                <% if (o.reminder_count) { %>
+                  Sent <%= o.reminder_count %>x<% if (o.last_reminded_at) { %>, last <%= o.last_reminded_at %><% } %>
+                <% } else { %>
+                  &mdash;
+                <% } %>
+              </td>
+              <td class="row-actions">
+                <% if (o.status === 'pending') { %>
+                  <form method="post" action="/offers/<%= o.id %>/remind" class="inline">
+                    <button type="submit" class="link-button">Send reminder</button>
+                  </form>
+                <% } %>
+                <form method="post" action="/offers/<%= o.id %>/delete" class="inline">
                   <button type="submit" class="link-button danger">Remove</button>
                 </form>
               </td>
             </tr>
           <% }) %>
           <% if (!offers.length) { %>
-            <tr><td colspan="6" class="muted">No offers sent yet.</td></tr>
+            <tr><td colspan="7" class="muted">No offers sent yet.</td></tr>
           <% } %>
         </tbody>
       </table>

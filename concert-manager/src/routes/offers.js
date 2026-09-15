@@ -1,5 +1,6 @@
 const express = require("express");
 const db = require("../db");
+const { sendResponseNoteNotification } = require("../mailer");
 
 const router = express.Router();
 
@@ -39,16 +40,31 @@ router.get("/:token/respond", (req, res) => {
   res.render("offer", { ...bundle, confirmDecision: decision });
 });
 
-router.post("/:token/respond", (req, res) => {
+router.post("/:token/respond", async (req, res) => {
   const bundle = loadOfferBundle(req.params.token);
   if (!bundle) return res.status(404).render("offer-not-found");
 
   const decision = req.body.decision === "decline" ? "declined" : "accepted";
+  const note = (req.body.note || "").trim() || null;
+
   if (bundle.offer.status === "pending") {
-    db.prepare("UPDATE offers SET status = ?, responded_at = datetime('now') WHERE id = ?").run(
-      decision,
-      bundle.offer.id
-    );
+    db.prepare(
+      "UPDATE offers SET status = ?, responded_at = datetime('now'), response_note = ? WHERE id = ?"
+    ).run(decision, note, bundle.offer.id);
+
+    if (note) {
+      const ensemble = db.prepare("SELECT * FROM ensemble_profile WHERE id = 1").get();
+      const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get("host")}`;
+      await sendResponseNoteNotification({
+        musician: bundle.musician,
+        concert: bundle.concert,
+        offer: bundle.offer,
+        decision,
+        note,
+        ensemble,
+        baseUrl,
+      });
+    }
   }
 
   res.redirect(`/offers/${req.params.token}`);
